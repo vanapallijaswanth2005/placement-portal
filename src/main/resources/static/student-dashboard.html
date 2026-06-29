@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Placement Portal | Student Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="glass-container dashboard-container">
+        <header class="dashboard-header">
+            <div>
+                <h2 class="gradient-text">Student Dashboard</h2>
+                <p>Welcome back! Here are the latest opportunities.</p>
+            </div>
+            <div class="user-info">
+                <span class="role-badge">Student</span>
+                <button onclick="logout()" class="btn btn-secondary btn-sm">Logout</button>
+            </div>
+        </header>
+
+        <main class="dashboard-content">
+            <section>
+                <h3>Available Jobs</h3>
+                <div id="jobList" class="job-grid">
+                    <!-- Jobs populated by JS -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Background elements -->
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-3" style="bottom: 10%; right: 10%; top: auto; left: auto;"></div>
+
+    <script src="js/api.js"></script>
+    <script src="js/student.js"></script>
+</body>
+</html>

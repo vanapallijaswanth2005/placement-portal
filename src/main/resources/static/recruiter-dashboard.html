@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Placement Portal | Recruiter Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="glass-container dashboard-container">
+        <header class="dashboard-header">
+            <div>
+                <h2 class="gradient-text">Recruiter Dashboard</h2>
+                <p>Manage your job postings and review applications.</p>
+            </div>
+            <div class="user-info">
+                <span class="role-badge" style="background: rgba(236,72,153,0.2); color: #F472B6;">Recruiter</span>
+                <button onclick="logout()" class="btn btn-secondary btn-sm">Logout</button>
+            </div>
+        </header>
+
+        <main class="dashboard-content">
+            <section>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h3>My Job Postings</h3>
+                    <button id="postJobBtn" class="btn btn-primary btn-sm">+ Post New Job</button>
+                </div>
+                <div id="recruiterJobs" class="job-grid">
+                    <!-- Jobs populated by JS -->
+                </div>
+            </section>
+
+            <section style="margin-top: 2rem;">
+                <h3>Recent Applications</h3>
+                <div class="data-list">
+                    <div class="data-row data-header">
+                        <div class="col-2">Student Name</div>
+                        <div class="col-3">Job Title</div>
+                        <div class="col-1">Status</div>
+                        <div class="col-2">Action</div>
+                    </div>
+                    <div id="applicationList">
+                        <!-- Apps populated by JS -->
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Job Modal -->
+    <div class="modal-overlay" id="jobModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Post a New Job</h3>
+                <button class="close-btn">&times;</button>
+            </div>
+            <form id="createJobForm">
+                <div class="input-group">
+                    <label>Job Title</label>
+                    <input type="text" id="jobTitle" required>
+                </div>
+                <div class="input-group">
+                    <label>Company</label>
+                    <input type="text" id="jobCompany" required>
+                </div>
+                <div style="display: flex; gap: 1rem;">
+                    <div class="input-group" style="flex: 1;">
+                        <label>Location</label>
+                        <input type="text" id="jobLocation">
+                    </div>
+                    <div class="input-group" style="flex: 1;">
+                        <label>Salary</label>
+                        <input type="text" id="jobSalary">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Description</label>
+                    <textarea id="jobDescription" rows="4" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Post Job</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Background elements -->
+    <div class="bg-shape shape-2" style="top: 10%; left: 10%;"></div>
+
+    <script src="js/api.js"></script>
+    <script src="js/recruiter.js"></script>
+</body>
+</html>

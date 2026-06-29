@@ -19,6 +19,9 @@ public class AuthService {
     @Autowired
     private BCryptPasswordEncoder encoder;
 
+    @Autowired
+    private EmailService emailService;
+
     public String register(RegisterRequest request) {
 
         User user = new User();
@@ -29,9 +32,15 @@ public class AuthService {
                 encoder.encode(request.getPassword())
         );
 
+        user.setEmail(request.getEmail());
         user.setRole(request.getRole());
 
         userRepository.save(user);
+
+        // Send welcome email asynchronously
+        new Thread(() -> {
+            emailService.sendWelcomeEmail(user.getEmail(), user.getUsername(), user.getRole().name());
+        }).start();
 
         return "User Registered Successfully";
     }
@@ -48,7 +57,8 @@ public class AuthService {
                 user.getPassword())) {
 
             return JwtUtil.generateToken(
-                    user.getUsername()
+                    user.getUsername(),
+                    user.getRole().name()
             );
         }
 

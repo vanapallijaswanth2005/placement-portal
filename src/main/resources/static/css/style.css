@@ -1,0 +1,727 @@
+/* ==========================================================================
+   CSS DESIGN SYSTEM: GLASSMORPHISM DARK HARMONY
+   ========================================================================== */
+
+:root {
+    --bg-dark: #09090e;
+    --panel-bg: rgba(20, 20, 35, 0.45);
+    --panel-border: rgba(255, 255, 255, 0.08);
+    --text-primary: #f3f3f6;
+    --text-secondary: #a0a0ba;
+    
+    /* Harmonious Brand Colors (Indigo / Violet Accent Stack) */
+    --primary: #6366f1;
+    --primary-glow: rgba(99, 102, 241, 0.35);
+    --primary-hover: #4f46e5;
+    --secondary: #8b5cf6;
+    --secondary-glow: rgba(139, 92, 246, 0.25);
+    
+    /* Status Hues (Tailored HSL) */
+    --status-applied: #f59e0b;      /* Amber */
+    --status-review: #3b82f6;       /* Blue */
+    --status-interview: #a855f7;    /* Purple */
+    --status-selected: #10b981;     /* Emerald */
+    --status-rejected: #ef4444;     /* Rose */
+    
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --shadow-glow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+/* Light Theme Overrides */
+body.light-mode {
+    --bg-dark: #f0f2f5;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --panel-bg: rgba(255, 255, 255, 0.7);
+    --panel-border: rgba(255, 255, 255, 0.6);
+    --shadow-glow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+}
+
+body.light-mode .btn-secondary {
+    color: var(--text-primary);
+    border-color: #cbd5e1;
+}
+
+body.light-mode .form-group input, 
+body.light-mode .form-group select {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid #cbd5e1;
+    color: var(--text-primary);
+}
+
+body.light-mode .form-group select option {
+    background-color: #ffffff;
+    color: var(--text-primary);
+}
+
+body.light-mode .job-card,
+body.light-mode .job-list-item {
+    background: rgba(255, 255, 255, 0.5);
+    border-color: #e2e8f0;
+}
+
+/* Reset & Global */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+}
+
+h1, h2, h3, h4, .nav-logo {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+}
+
+/* Ambient Background Glows */
+.bg-glow {
+    position: fixed;
+    width: 60vw;
+    height: 60vw;
+    border-radius: 50%;
+    filter: blur(140px);
+    z-index: -1;
+    opacity: 0.15;
+    pointer-events: none;
+    animation: pulseGlow 15s infinite alternate ease-in-out;
+}
+
+.bg-glow-1 {
+    background: radial-gradient(circle, var(--primary) 0%, transparent 70%);
+    top: -20%;
+    left: -10%;
+}
+
+.bg-glow-2 {
+    background: radial-gradient(circle, var(--secondary) 0%, transparent 70%);
+    bottom: -20%;
+    right: -10%;
+    animation-delay: 5s;
+}
+
+@keyframes pulseGlow {
+    0% {
+        transform: scale(1) translate(0px, 0px);
+    }
+    100% {
+        transform: scale(1.15) translate(40px, 30px);
+    }
+}
+
+/* App Container */
+.app-container {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    justify-content: center;
+}
+
+/* Glassmorphism Panel Template */
+.glass-panel {
+    background: var(--panel-bg);
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    border: 1px solid var(--panel-border);
+    border-radius: 20px;
+    box-shadow: var(--shadow-glow);
+    padding: 30px;
+    transition: var(--transition-smooth);
+}
+
+/* ==========================================================================
+   AUTHENTICATION STYLES
+   ========================================================================== */
+
+.auth-card {
+    max-width: 480px;
+    width: 100%;
+    margin: 40px auto;
+    align-self: center;
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.auth-header h1 {
+    font-size: 2.5rem;
+    background: linear-gradient(135deg, var(--text-primary) 30%, var(--primary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+}
+
+.auth-header p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.form-group input, 
+.form-group select {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 14px 16px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    outline: none;
+    transition: var(--transition-smooth);
+}
+
+.form-group input:focus, 
+.form-group select:focus {
+    border-color: var(--primary);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 12px var(--primary-glow);
+}
+
+.form-group select option {
+    background-color: #121220;
+    color: var(--text-primary);
+}
+
+/* Buttons */
+.btn {
+    border-radius: 12px;
+    padding: 14px 28px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    outline: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: var(--transition-smooth);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    color: white;
+    box-shadow: 0 4px 15px var(--primary-glow);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+}
+
+.btn-primary:active {
+    transform: translateY(1px);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    border-radius: 8px;
+}
+
+.btn-danger {
+    background: rgba(239, 68, 68, 0.2);
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.btn-danger:hover {
+    background: rgba(239, 68, 68, 0.35);
+}
+
+.btn-block {
+    width: 100%;
+}
+
+.btn-group {
+    display: flex;
+    gap: 10px;
+}
+
+.auth-toggle {
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-top: 10px;
+}
+
+.auth-toggle span {
+    color: var(--primary);
+    cursor: pointer;
+    font-weight: 500;
+    transition: var(--transition-smooth);
+}
+
+.auth-toggle span:hover {
+    text-decoration: underline;
+    color: var(--secondary);
+}
+
+/* ==========================================================================
+   NAVIGATION
+   ========================================================================== */
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 30px;
+    margin-bottom: 30px;
+    width: 100%;
+}
+
+.nav-logo {
+    font-size: 1.6rem;
+    letter-spacing: 0.5px;
+}
+
+.logo-accent {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.user-badge {
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    color: var(--primary);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.user-badge img {
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+}
+
+/* ==========================================================================
+   DASHBOARDS
+   ========================================================================== */
+
+.dashboard-view {
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 30px;
+}
+
+@media (max-width: 900px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.full-width {
+    grid-column: 1 / -1;
+}
+
+/* Common Card Typography */
+h3 {
+    font-size: 1.35rem;
+    margin-bottom: 6px;
+    color: var(--text-primary);
+}
+
+.card-desc {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 24px;
+}
+
+/* ==========================================================================
+   JOBS MODULE
+   ========================================================================== */
+
+.jobs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.job-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    transition: var(--transition-smooth);
+}
+
+.job-card:hover {
+    transform: translateY(-4px);
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.job-card-header {
+    margin-bottom: 16px;
+}
+
+.job-card-header h4 {
+    font-size: 1.15rem;
+    margin-bottom: 4px;
+    color: var(--text-primary);
+}
+
+.job-company {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.job-salary-badge {
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    align-self: flex-start;
+    margin-bottom: 24px;
+}
+
+.job-card .btn {
+    margin-top: auto;
+}
+
+/* Recruiter Job Management list */
+.jobs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.job-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    transition: var(--transition-smooth);
+}
+
+.job-list-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.job-list-details h4 {
+    font-size: 1.05rem;
+    margin-bottom: 2px;
+}
+
+.job-list-details p {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+/* ==========================================================================
+   TABLES & DIRECTORIES
+   ========================================================================== */
+
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    margin-top: 10px;
+    min-width: 600px;
+}
+
+.data-table th, 
+.data-table td {
+    padding: 16px 20px;
+    font-size: 0.9rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.data-table th {
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+}
+
+.data-table tbody tr {
+    transition: var(--transition-smooth);
+}
+
+.data-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.data-table td {
+    color: var(--text-primary);
+}
+
+/* Status Badges */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-applied {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--status-applied);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.badge-review {
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--status-review);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.badge-interview {
+    background: rgba(168, 85, 247, 0.15);
+    color: var(--status-interview);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.badge-selected {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--status-selected);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-rejected {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--status-rejected);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Action select in application review */
+.status-action-select {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border-radius: 8px;
+    padding: 6px 12px;
+    outline: none;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.status-action-select:focus {
+    border-color: var(--primary);
+}
+
+/* ==========================================================================
+   ADMIN STYLES
+   ========================================================================== */
+
+.admin-stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+@media (max-width: 768px) {
+    .admin-stats-row {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+}
+
+.stat-card {
+    text-align: center;
+    padding: 24px;
+}
+
+.stat-num {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.8rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 4px;
+}
+
+.stat-label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ==========================================================================
+   UTILITY CLASSES & WIDGETS
+   ========================================================================== */
+
+.hidden {
+    display: none !important;
+}
+
+/* Toast Notification */
+.toast {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    padding: 16px 28px;
+    border-radius: 12px;
+    background: rgba(18, 18, 29, 0.9);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--panel-border);
+    color: var(--text-primary);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.toast.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.toast-success {
+    border-left: 4px solid var(--status-selected);
+}
+
+.toast-error {
+    border-left: 4px solid var(--status-rejected);
+}
+
+.toast-info {
+    border-left: 4px solid var(--status-review);
+}
+
+/* Loading Spinner */
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Skeleton Loaders */
+.skeleton {
+    background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.05) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 8px;
+    min-height: 20px;
+    margin-bottom: 8px;
+}
+body.light-mode .skeleton {
+    background: linear-gradient(90deg, rgba(0,0,0,0.05) 25%, rgba(0,0,0,0.15) 50%, rgba(0,0,0,0.05) 75%);
+    background-size: 200% 100%;
+}
+@keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Fix for icons */
+.btn-icon {
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+.btn-icon:hover {
+    background: rgba(255,255,255,0.1);
+}

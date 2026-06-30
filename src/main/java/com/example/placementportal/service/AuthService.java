@@ -22,9 +22,6 @@ public class AuthService {
     @Autowired
     private EmailService emailService;
 
-    @Autowired
-    private JwtUtil jwtUtil;
-
     public String register(RegisterRequest request) {
 
         User user = new User();
@@ -40,8 +37,10 @@ public class AuthService {
 
         userRepository.save(user);
 
-        // Send welcome email asynchronously via @Async
-        emailService.sendWelcomeEmail(user.getEmail(), user.getUsername(), user.getRole().name());
+        // Send welcome email asynchronously
+        new Thread(() -> {
+            emailService.sendWelcomeEmail(user.getEmail(), user.getUsername(), user.getRole().name());
+        }).start();
 
         return "User Registered Successfully";
     }
@@ -51,19 +50,19 @@ public class AuthService {
         User user = userRepository
                 .findByUsername(request.getUsername())
                 .orElseThrow(() ->
-                        new com.example.placementportal.exception.UserNotFoundException("User Not Found"));
+                        new RuntimeException("User Not Found"));
 
         if (encoder.matches(
                 request.getPassword(),
                 user.getPassword())) {
 
-            return jwtUtil.generateToken(
+            return JwtUtil.generateToken(
                     user.getUsername(),
                     user.getRole().name()
             );
         }
 
-        throw new com.example.placementportal.exception.AuthenticationFailedException(
+        throw new RuntimeException(
                 "Invalid Username or Password");
     }
 }

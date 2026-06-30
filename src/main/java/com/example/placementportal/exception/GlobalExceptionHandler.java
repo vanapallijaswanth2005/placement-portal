@@ -30,16 +30,6 @@ public class GlobalExceptionHandler {
         );
     }
 
-    @ExceptionHandler(com.example.placementportal.exception.AuthenticationFailedException.class)
-    public ResponseEntity<String> handleAuthFailed(com.example.placementportal.exception.AuthenticationFailedException ex) {
-        return new ResponseEntity<>(ex.getMessage(), HttpStatus.UNAUTHORIZED);
-    }
-
-    @ExceptionHandler(com.example.placementportal.exception.UserNotFoundException.class)
-    public ResponseEntity<String> handleUserNotFound(com.example.placementportal.exception.UserNotFoundException ex) {
-        return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
-    }
-
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleGeneralException(
             Exception ex) {

@@ -13,6 +13,7 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
+    @org.springframework.scheduling.annotation.Async
     public void sendWelcomeEmail(String to, String username, String role) {
         if (to == null || to.isEmpty()) {
             log.warn("Cannot send welcome email, address is empty for user: {}", username);
@@ -39,6 +40,7 @@ public class EmailService {
         }
     }
 
+    @org.springframework.scheduling.annotation.Async
     public void sendApplicationStatusUpdate(String to, String studentName, String jobTitle, String company, String newStatus) {
         if (to == null || to.isEmpty()) {
             log.warn("Cannot send status update email, address is empty for student: {}", studentName);

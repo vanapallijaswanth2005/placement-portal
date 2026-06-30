@@ -40,10 +40,8 @@ public class AuthService {
 
         userRepository.save(user);
 
-        // Send welcome email asynchronously
-        new Thread(() -> {
-            emailService.sendWelcomeEmail(user.getEmail(), user.getUsername(), user.getRole().name());
-        }).start();
+        // Send welcome email asynchronously via @Async
+        emailService.sendWelcomeEmail(user.getEmail(), user.getUsername(), user.getRole().name());
 
         return "User Registered Successfully";
     }
@@ -53,7 +51,7 @@ public class AuthService {
         User user = userRepository
                 .findByUsername(request.getUsername())
                 .orElseThrow(() ->
-                        new RuntimeException("User Not Found"));
+                        new com.example.placementportal.exception.UserNotFoundException("User Not Found"));
 
         if (encoder.matches(
                 request.getPassword(),
@@ -65,7 +63,7 @@ public class AuthService {
             );
         }
 
-        throw new RuntimeException(
+        throw new com.example.placementportal.exception.AuthenticationFailedException(
                 "Invalid Username or Password");
     }
 }

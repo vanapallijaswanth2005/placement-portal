@@ -21,24 +21,14 @@ $env:JWT_SECRET='dev-secret-0123456789abcdef01234567'
 - App: http://localhost:8081
 - Swagger UI: http://localhost:8081/swagger-ui/index.html
 
-## Option 2: Run via IntelliJ IDE
+## Option 2: Run via IntelliJ IDE (No Setup Required!)
 
-### Step 1: Configure Run Configuration
-1. Go to `Run` → `Edit Configurations...`
-2. Select or create a `Spring Boot` configuration
-3. In **VM options**, add:
-   ```
-   -Dspring.profiles.active=dev
-   ```
-4. Click `Apply` and `OK`
-
-### Step 2: Run
-Click the green Run button (Shift+F10)
-
-**Why this works:** The `dev` profile (`application-dev.properties`) contains default credentials:
+Just click the green Run button (Shift+F10). The app uses fallback defaults in `application.properties`:
 - DB username: `root`
 - DB password: `Jaswanth@2005` 
 - JWT secret: `dev-secret-0123456789abcdef01234567`
+
+**Optional:** For explicit dev profile, go to `Run` → `Edit Configurations...` → add VM option: `-Dspring.profiles.active=dev`
 
 ## Option 3: Production Run (with env vars)
 
@@ -116,13 +106,15 @@ curl -H "Authorization: Bearer <your-jwt-token>" \
 ## Security Notes
 
 ⚠️ **IMPORTANT FOR DEVELOPERS:**
-- `application-dev.properties` contains **default credentials for development only**
-- This file should **never** be used in production
-- Always use environment variables (`DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`) in production
+- **Default credentials in `application.properties` are for LOCAL DEVELOPMENT ONLY**
+- Both `application.properties` and `application-dev.properties` contain dev credentials
+- This makes it easy to run locally, but **MUST be overridden in production**
+- Always use environment variables (`DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`) in production/CI-CD
 - Never commit real database passwords or secrets to version control
 
 **These credentials are already exposed in git history as of recent changes. For production:**
 1. Use strong, unique credentials
-2. Rotate database password
-3. Use a secrets manager (AWS Secrets Manager, HashiCorp Vault, etc.)
-4. Consider using git-filter-repo to scrub history (breaking change)
+2. Rotate database password immediately
+3. Deploy with environment variables (docker, k8s, cloud platforms all support this)
+4. Use a secrets manager (AWS Secrets Manager, HashiCorp Vault, etc.)
+5. Consider using git-filter-repo to scrub history (breaking change, requires coordination)

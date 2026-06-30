@@ -22,6 +22,9 @@ public class AuthService {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
     public String register(RegisterRequest request) {
 
         User user = new User();
@@ -56,7 +59,7 @@ public class AuthService {
                 request.getPassword(),
                 user.getPassword())) {
 
-            return JwtUtil.generateToken(
+            return jwtUtil.generateToken(
                     user.getUsername(),
                     user.getRole().name()
             );

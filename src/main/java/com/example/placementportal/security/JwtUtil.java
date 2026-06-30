@@ -15,9 +15,18 @@ public class JwtUtil {
     private final SecretKey secretKey;
     private final long expirationMs;
 
-    public JwtUtil(@Value("${jwt.secret}") String secret,
+    public JwtUtil(@Value("${jwt.secret:}") String secret,
                    @Value("${jwt.expiration-ms:86400000}") long expirationMs) {
-        this.secretKey = Keys.hmacShaKeyFor(secret.getBytes());
+        if (secret == null || secret.trim().isEmpty()) {
+            throw new IllegalStateException("Missing JWT secret. Set JWT_SECRET environment variable or 'jwt.secret' property.");
+        }
+
+        byte[] keyBytes = secret.getBytes();
+        if (keyBytes.length < 32) {
+            throw new IllegalStateException("JWT secret too short. Provide at least 32 bytes (256 bits) of secret.");
+        }
+
+        this.secretKey = Keys.hmacShaKeyFor(keyBytes);
         this.expirationMs = expirationMs;
     }
 

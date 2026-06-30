@@ -9,22 +9,11 @@ import java.util.Date;
 
 public class JwtUtil {
 
-    // Read JWT secret from environment variable JWT_SECRET or property jwt.secret
-    private static SecretKey getSecretKey() {
-        String secret = System.getenv("JWT_SECRET");
-        if (secret == null || secret.isEmpty()) {
-            // fallback to system property
-            secret = System.getProperty("jwt.secret");
-        }
-        if (secret == null || secret.isEmpty()) {
-            throw new IllegalStateException("JWT secret not configured. Set environment variable JWT_SECRET or system property jwt.secret");
-        }
-        byte[] bytes = secret.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-        if (bytes.length < 32) {
-            throw new IllegalStateException("JWT secret is too short. Provide at least 32 bytes of secret.");
-        }
-        return Keys.hmacShaKeyFor(bytes);
-    }
+    private static final SecretKey SECRET_KEY =
+            Keys.hmacShaKeyFor(
+                    "placementportaljwtsecretkey123456placementportal"
+                            .getBytes()
+            );
 
     // 🔥 UPDATED: now includes ROLE
     public static String generateToken(String username, String role) {
@@ -34,14 +23,14 @@ public class JwtUtil {
                 .claim("role", role)   // 👈 ADD ROLE HERE
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 86400000))
-                .signWith(getSecretKey(), SignatureAlgorithm.HS256)
+                .signWith(SECRET_KEY, SignatureAlgorithm.HS256)
                 .compact();
     }
 
     public static String extractUsername(String token) {
 
         return Jwts.parserBuilder()
-                .setSigningKey(getSecretKey())
+                .setSigningKey(SECRET_KEY)
                 .build()
                 .parseClaimsJws(token)
                 .getBody()
@@ -52,7 +41,7 @@ public class JwtUtil {
     public static String extractRole(String token) {
 
         return Jwts.parserBuilder()
-                .setSigningKey(getSecretKey())
+                .setSigningKey(SECRET_KEY)
                 .build()
                 .parseClaimsJws(token)
                 .getBody()
@@ -63,7 +52,7 @@ public class JwtUtil {
 
         try {
             Jwts.parserBuilder()
-                    .setSigningKey(getSecretKey())
+                    .setSigningKey(SECRET_KEY)
                     .build()
                     .parseClaimsJws(token);
 

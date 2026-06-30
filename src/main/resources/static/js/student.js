@@ -47,16 +47,7 @@ async function applyForJob(jobId) {
     if(!confirm("Are you sure you want to apply for this job?")) return;
 
     try {
-        // Assume JobApplication requires { job: { id: jobId }, student: { id: ? }, status: "PENDING" }
-        // The backend might be expecting student ID to be set from the JWT instead of the request body.
-        // If the backend needs student ID explicitly, it'll fail, but we'll try sending just the job ID.
-        // In a real scenario, backend extracts student from context.
-        const appData = {
-            job: { id: jobId },
-            status: "PENDING"
-        };
-        
-        await api.post('/apply', appData);
+        await api.fetch(`/apply?jobId=${encodeURIComponent(jobId)}`, { method: 'POST' });
         alert('Successfully applied!');
         
     } catch (err) {

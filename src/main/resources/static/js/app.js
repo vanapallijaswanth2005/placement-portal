@@ -120,6 +120,10 @@ async function apiFetch(url, options = {}) {
             throw new Error(text || `HTTP error ${response.status}`);
         }
         
+        if (!text) {
+            return null;
+        }
+
         if (contentType && contentType.includes('application/json')) {
             return JSON.parse(text);
         }
@@ -330,7 +334,6 @@ async function handleRegister(e) {
 
 async function loadStudentDashboard() {
     try {
-        // 1. Get current Student profile (404 / empty means not created yet)
         const profile = await apiFetch('/students/me');
         if (profile && profile.id) {
             state.studentProfile = profile;
@@ -340,10 +343,7 @@ async function loadStudentDashboard() {
             state.studentProfile = null;
         }
         
-        // 2. Fetch all jobs
         state.jobs = await apiFetch('/jobs') || [];
-        
-        // 3. Fetch applications
         state.applications = await apiFetch('/apply/my') || [];
         
         renderStudentJobs();
@@ -384,7 +384,7 @@ function renderStudentJobs() {
     
     state.jobs.forEach(job => {
         // Find if user already applied to this job
-        const applied = state.applications.find(app => app.jobId === job.id);
+        const applied = state.applications.find(app => getApplicationJobId(app) === job.id);
         
         const card = document.createElement('div');
         card.className = 'job-card';
@@ -407,7 +407,7 @@ function renderStudentJobs() {
                     <span>${escapeHtml(job.company)}</span>
                 </div>
             </div>
-            <div class="job-salary-badge">$${job.salary.toLocaleString()}/yr</div>
+            <div class="job-salary-badge">${formatSalary(job.salary)}/yr</div>
             ${actionBtnHtml}
         `;
         el.studentJobsList.appendChild(card);
@@ -416,9 +416,8 @@ function renderStudentJobs() {
 
 async function applyForJob(jobId) {
     try {
-        await apiFetch('/apply', {
-            method: 'POST',
-            body: { jobId }
+        await apiFetch(`/apply?jobId=${encodeURIComponent(jobId)}`, {
+            method: 'POST'
         });
         showToast('Application submitted successfully!', 'success');
         loadStudentDashboard();
@@ -436,14 +435,14 @@ function renderStudentApplications() {
     }
     
     state.applications.forEach(app => {
-        const job = state.jobs.find(j => j.id === app.jobId) || { title: 'Unknown Job', company: 'Unknown Company', salary: 0 };
+        const job = app.job || state.jobs.find(j => j.id === getApplicationJobId(app)) || { title: 'Unknown Job', company: 'Unknown Company', salary: 0 };
         const tr = document.createElement('tr');
         const statusClass = getStatusClass(app.status);
         
         tr.innerHTML = `
             <td><strong>${escapeHtml(job.title)}</strong></td>
             <td>${escapeHtml(job.company)}</td>
-            <td>$${job.salary.toLocaleString()}</td>
+            <td>${formatSalary(job.salary)}</td>
             <td><span class="badge ${statusClass}">${app.status}</span></td>
         `;
         el.studentAppsList.appendChild(tr);
@@ -487,7 +486,7 @@ function renderRecruiterJobs() {
         div.innerHTML = `
             <div class="job-list-details">
                 <h4>${escapeHtml(job.title)}</h4>
-                <p>${escapeHtml(job.company)} &bull; $${job.salary.toLocaleString()}/yr</p>
+                <p>${escapeHtml(job.company)} &bull; ${formatSalary(job.salary)}/yr</p>
             </div>
             <div class="btn-group">
                 <button class="btn btn-secondary btn-sm" onclick="populateEditJob(${job.id})">Edit</button>
@@ -507,8 +506,8 @@ function renderRecruiterApplications() {
     }
     
     state.applications.forEach(app => {
-        const student = state.students.find(s => s.id === app.studentId) || { name: 'Unknown Student', skills: 'N/A', cgpa: 0.0 };
-        const job = state.jobs.find(j => j.id === app.jobId) || { title: 'Unknown Job', company: 'Unknown Company' };
+        const student = app.student || state.students.find(s => s.id === getApplicationStudentId(app)) || { name: 'Unknown Student', skills: 'N/A', cgpa: 0.0 };
+        const job = app.job || state.jobs.find(j => j.id === getApplicationJobId(app)) || { title: 'Unknown Job', company: 'Unknown Company' };
         
         const tr = document.createElement('tr');
         const statusClass = getStatusClass(app.status);
@@ -516,7 +515,7 @@ function renderRecruiterApplications() {
         tr.innerHTML = `
             <td><strong>${escapeHtml(student.name)}</strong></td>
             <td>${escapeHtml(student.skills)}</td>
-            <td>${student.cgpa.toFixed(2)}</td>
+            <td>${Number(student.cgpa || 0).toFixed(2)}</td>
             <td>${escapeHtml(job.title)}</td>
             <td>${escapeHtml(job.company)}</td>
             <td><span class="badge ${statusClass}">${app.status}</span></td>
@@ -668,7 +667,7 @@ function renderAdminJobs() {
             <td>${job.id}</td>
             <td><strong>${escapeHtml(job.title)}</strong></td>
             <td>${escapeHtml(job.company)}</td>
-            <td>$${job.salary.toLocaleString()}</td>
+            <td>${formatSalary(job.salary)}</td>
             <td>
                 <button class="btn btn-danger btn-sm" onclick="adminDeleteJob(${job.id})">Delete Job</button>
             </td>
@@ -681,7 +680,7 @@ async function adminDeleteStudent(id) {
     if (!confirm('Are you sure you want to delete this student profile?')) return;
     
     try {
-        await apiFetch(`/students/${id}`, {
+        await apiFetch(`/admin/students/${id}`, {
             method: 'DELETE'
         });
         showToast('Student profile deleted!', 'success');
@@ -695,9 +694,7 @@ async function adminDeleteJob(id) {
     if (!confirm('Are you sure you want to delete this job posting?')) return;
     
     try {
-        // Admin deletes via same job delete route (Note: In controllers, deleteJob was only RECRUITER role.
-        // Let's modify JobController to allow ADMIN role to delete jobs as well, or restrict it accordingly.)
-        await apiFetch(`/jobs/${id}`, {
+        await apiFetch(`/admin/jobs/${id}`, {
             method: 'DELETE'
         });
         showToast('Job posting deleted!', 'success');
@@ -727,6 +724,19 @@ function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
+}
+
+function getApplicationJobId(app) {
+    return app.jobId || (app.job && app.job.id);
+}
+
+function getApplicationStudentId(app) {
+    return app.studentId || (app.student && app.student.id);
+}
+
+function formatSalary(value) {
+    const salary = Number(value || 0);
+    return salary > 0 ? `$${salary.toLocaleString()}` : 'Not disclosed';
 }
 
 function renderAdminChart() {

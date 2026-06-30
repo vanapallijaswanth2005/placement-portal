@@ -2,13 +2,18 @@ package com.example.placementportal.service;
 
 import com.example.placementportal.dto.LoginRequest;
 import com.example.placementportal.dto.RegisterRequest;
+import com.example.placementportal.entity.Recruiter;
+import com.example.placementportal.entity.Role;
 import com.example.placementportal.entity.User;
+import com.example.placementportal.repository.RecruiterRepository;
 import com.example.placementportal.repository.UserRepository;
 import com.example.placementportal.security.JwtUtil;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class AuthService {
@@ -22,7 +27,13 @@ public class AuthService {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private RecruiterRepository recruiterRepository;
+
     public String register(RegisterRequest request) {
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already exists");
+        }
 
         User user = new User();
 
@@ -35,7 +46,16 @@ public class AuthService {
         user.setEmail(request.getEmail());
         user.setRole(request.getRole());
 
-        userRepository.save(user);
+        User savedUser = userRepository.save(user);
+
+        if (savedUser.getRole() == Role.RECRUITER) {
+            Recruiter recruiter = new Recruiter();
+            recruiter.setUser(savedUser);
+            recruiter.setRecruiterName(savedUser.getUsername());
+            recruiter.setCompanyName("Not specified");
+            recruiter.setEmail(savedUser.getEmail());
+            recruiterRepository.save(recruiter);
+        }
 
         // Send welcome email asynchronously
         new Thread(() -> {
@@ -50,7 +70,7 @@ public class AuthService {
         User user = userRepository
                 .findByUsername(request.getUsername())
                 .orElseThrow(() ->
-                        new RuntimeException("User Not Found"));
+                        new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password"));
 
         if (encoder.matches(
                 request.getPassword(),
@@ -62,7 +82,6 @@ public class AuthService {
             );
         }
 
-        throw new RuntimeException(
-                "Invalid Username or Password");
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password");
     }
 }

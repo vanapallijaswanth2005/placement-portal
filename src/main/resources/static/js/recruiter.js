@@ -56,7 +56,7 @@ async function loadMyJobs() {
     jobList.innerHTML = '<p>Loading...</p>';
 
     try {
-        const jobs = await api.get('/jobs');
+        const jobs = await api.get('/jobs/my');
         
         if (jobs.length === 0) {
             jobList.innerHTML = '<p>You have not posted any jobs yet.</p>';
@@ -90,7 +90,7 @@ async function loadApplications() {
     appList.innerHTML = '<div class="data-row"><p>Loading applications...</p></div>';
 
     try {
-        const apps = await api.get('/apply/all');
+        const apps = await api.get('/apply/recruiter/my');
         
         if (apps.length === 0) {
             appList.innerHTML = '<div class="data-row"><p>No applications received yet.</p></div>';
@@ -111,9 +111,10 @@ async function loadApplications() {
                 <div class="col-1"><span class="status-badge ${statusClass}">${escapeHTML(app.status)}</span></div>
                 <div class="col-2" style="display:flex; gap:0.5rem;">
                     <select onchange="updateStatus(${app.id}, this.value)" style="padding: 0.25rem; font-size: 0.8rem; background:rgba(0,0,0,0.5); color:white;">
-                        <option value="PENDING" ${app.status === 'PENDING' ? 'selected' : ''}>Pending</option>
-                        <option value="REVIEWING" ${app.status === 'REVIEWING' ? 'selected' : ''}>Reviewing</option>
-                        <option value="ACCEPTED" ${app.status === 'ACCEPTED' ? 'selected' : ''}>Accept</option>
+                        <option value="APPLIED" ${app.status === 'APPLIED' ? 'selected' : ''}>Applied</option>
+                        <option value="UNDER_REVIEW" ${app.status === 'UNDER_REVIEW' ? 'selected' : ''}>Under Review</option>
+                        <option value="INTERVIEW" ${app.status === 'INTERVIEW' ? 'selected' : ''}>Interview</option>
+                        <option value="SELECTED" ${app.status === 'SELECTED' ? 'selected' : ''}>Selected</option>
                         <option value="REJECTED" ${app.status === 'REJECTED' ? 'selected' : ''}>Reject</option>
                     </select>
                 </div>

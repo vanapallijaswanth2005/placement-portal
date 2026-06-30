@@ -1,5 +1,6 @@
 package com.example.placementportal.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
@@ -29,6 +30,7 @@ public class Job {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recruiter_id")
+    @JsonIgnore
     private Recruiter recruiter;
 
     public Job() {}

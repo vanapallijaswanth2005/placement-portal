@@ -34,7 +34,7 @@ public class StudentController {
     @GetMapping("/me")
     public Student getMyProfile() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return studentService.getStudentByName(username);
+        return studentService.getStudentByUsername(username);
     }
 
     // 🎓 STUDENT: Create or Update current student profile
@@ -53,7 +53,7 @@ public class StudentController {
             String username = SecurityContextHolder.getContext().getAuthentication().getName();
             String resumeUrl = fileUploadService.uploadResume(file);
 
-            Student student = studentService.getStudentByName(username);
+            Student student = studentService.getStudentByUsername(username);
             if (student == null) {
                 throw new RuntimeException("Please create your profile first before uploading a resume");
             }

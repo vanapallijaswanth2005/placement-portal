@@ -1,5 +1,6 @@
 package com.example.placementportal.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
@@ -28,6 +29,11 @@ public class Student {
     private String resumeUrl;
     private String linkedIn;
     private String github;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    @JsonIgnore
+    private User user;
 
     public Student() {}
 
@@ -66,4 +72,7 @@ public class Student {
 
     public String getGithub() { return github; }
     public void setGithub(String github) { this.github = github; }
+
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
 }

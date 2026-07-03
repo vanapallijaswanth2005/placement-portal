@@ -10,9 +10,6 @@ import com.example.placementportal.service.StudentService;
 import com.example.placementportal.service.EmailService;
 import com.example.placementportal.service.JobService;
 import com.example.placementportal.service.RecruiterService;
-import com.example.placementportal.repository.UserRepository;
-import com.example.placementportal.entity.User;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -39,15 +36,12 @@ public class ApplicationController {
     @Autowired
     private RecruiterService recruiterService;
 
-    @Autowired
-    private UserRepository userRepository;
-
     // 🎓 STUDENT: Apply for job
     @PreAuthorize("hasRole('STUDENT')")
     @PostMapping
     public JobApplication applyJob(@RequestParam Long jobId) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        Student student = studentService.getStudentByName(username);
+        Student student = studentService.getStudentByUsername(username);
         if (student == null) {
             throw new RuntimeException("Please create your student profile first before applying!");
         }
@@ -87,7 +81,7 @@ public class ApplicationController {
     @GetMapping("/my")
     public List<JobApplication> getMyApplications() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        Student student = studentService.getStudentByName(username);
+        Student student = studentService.getStudentByUsername(username);
         if (student == null) {
             return java.util.Collections.emptyList();
         }
@@ -130,24 +124,22 @@ public class ApplicationController {
         JobApplication app = service.getById(id);
         app.setStatus(status);
         JobApplication updatedApp = service.save(app);
+        Student student = app.getStudent();
+        Job job = app.getJob();
+        String studentEmail = student != null ? studentService.getStudentUserEmail(student.getId()) : null;
+        String studentName = student != null ? student.getName() : null;
 
         // Send status update email to student asynchronously
         new Thread(() -> {
             try {
-                Student student = app.getStudent();
-                if (student != null) {
-                    User user = userRepository.findByUsername(student.getName()).orElse(null);
-                    Job job = app.getJob();
-
-                    if (user != null && job != null) {
+                if (studentEmail != null && job != null) {
                         emailService.sendApplicationStatusUpdate(
-                            user.getEmail(),
-                            student.getName(),
+                            studentEmail,
+                            studentName,
                             job.getTitle(),
                             job.getCompany(),
                             status.name()
                         );
-                    }
                 }
             } catch (Exception e) {
                 e.printStackTrace();

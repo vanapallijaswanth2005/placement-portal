@@ -1,7 +1,9 @@
 package com.example.placementportal.service;
 
 import com.example.placementportal.entity.Student;
+import com.example.placementportal.entity.User;
 import com.example.placementportal.repository.StudentRepository;
+import com.example.placementportal.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -12,6 +14,9 @@ public class StudentService {
 
     @Autowired
     private StudentRepository repo;
+
+    @Autowired
+    private UserRepository userRepo;
 
     public List<Student> getAllStudents() {
         return repo.findAll();
@@ -25,16 +30,42 @@ public class StudentService {
         return repo.findByName(name).orElse(null);
     }
 
+    public Student getStudentByUsername(String username) {
+        User user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+
+        Student student = repo.findByUserId(user.getId()).orElse(null);
+        if (student != null) {
+            return student;
+        }
+
+        Student legacyStudent = repo.findByName(username).orElse(null);
+        if (legacyStudent != null) {
+            legacyStudent.setUser(user);
+            return repo.save(legacyStudent);
+        }
+
+        return null;
+    }
+
     public Student getStudentById(Long id) {
         return repo.findById(id).orElse(null);
     }
 
+    public String getStudentUserEmail(Long studentId) {
+        return repo.findUserEmailByStudentId(studentId).orElse(null);
+    }
+
     public Student saveOrUpdateStudentForUser(String username, Student student) {
-        Student existing = repo.findByName(username).orElse(null);
+        User user = userRepo.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+
+        Student existing = repo.findByUserId(user.getId()).orElse(null);
         if (existing == null) {
-            existing = new Student();
-            existing.setName(username);
+            existing = repo.findByName(username).orElse(new Student());
+            existing.setUser(user);
         }
+        existing.setName(username);
         existing.setEmail(student.getEmail());
         existing.setPhone(student.getPhone());
         existing.setBranch(student.getBranch());
@@ -68,4 +99,4 @@ public class StudentService {
     public void deleteStudent(@org.springframework.lang.NonNull Long id) {
         repo.deleteById(id);
     }
-}
+}

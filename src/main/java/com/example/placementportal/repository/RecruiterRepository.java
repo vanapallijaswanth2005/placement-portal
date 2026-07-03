@@ -9,4 +9,5 @@ import java.util.Optional;
 @Repository
 public interface RecruiterRepository extends JpaRepository<Recruiter, Long> {
     Optional<Recruiter> findByUserId(Long userId);
+    long countByApprovedFalse();
 }

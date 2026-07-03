@@ -21,6 +21,8 @@ public class Recruiter {
     private String email;
     private String phone;
 
+    private boolean approved = false;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     @JsonIgnore
@@ -45,6 +47,9 @@ public class Recruiter {
 
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
+
+    public boolean isApproved() { return approved; }
+    public void setApproved(boolean approved) { this.approved = approved; }
 
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }

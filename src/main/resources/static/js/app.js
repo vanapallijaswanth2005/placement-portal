@@ -5,7 +5,10 @@ const state = {
     studentProfile: null,
     jobs: [],
     applications: [],
-    students: []
+    students: [],
+    users: [],
+    recruiters: [],
+    adminStats: null
 };
 
 // UI Section Elements
@@ -56,6 +59,14 @@ const el = {
     jobTitleInput: document.getElementById('job-title'),
     jobCompanyInput: document.getElementById('job-company'),
     jobSalaryInput: document.getElementById('job-salary'),
+    jobLocationInput: document.getElementById('job-location'),
+    jobTypeInput: document.getElementById('job-type'),
+    jobExperienceInput: document.getElementById('job-experience'),
+    jobLastDateInput: document.getElementById('job-last-date'),
+    jobSkillsInput: document.getElementById('job-skills'),
+    jobEligibilityInput: document.getElementById('job-eligibility'),
+    jobDescriptionInput: document.getElementById('job-description'),
+    recruiterApprovalNotice: document.getElementById('recruiter-approval-notice'),
     jobSubmitBtn: document.getElementById('job-submit-btn'),
     cancelEditBtn: document.getElementById('cancel-edit-btn'),
     recruiterJobsList: document.getElementById('recruiter-jobs-list'),
@@ -63,8 +74,12 @@ const el = {
     
     // Admin Stats & Lists
     statStudents: document.getElementById('stat-students'),
+    statRecruiters: document.getElementById('stat-recruiters'),
+    statPendingRecruiters: document.getElementById('stat-pending-recruiters'),
     statJobs: document.getElementById('stat-jobs'),
     statApplications: document.getElementById('stat-applications'),
+    adminRecruitersList: document.getElementById('admin-recruiters-list'),
+    adminUsersList: document.getElementById('admin-users-list'),
     adminStudentsList: document.getElementById('admin-students-list'),
     adminJobsList: document.getElementById('admin-jobs-list')
 };
@@ -498,8 +513,11 @@ function renderStudentJobs() {
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                     <span>${escapeHtml(job.company)}</span>
                 </div>
-                ${job.location ? `<p class="card-desc">${escapeHtml(job.location)}</p>` : ''}
-                ${job.skills ? `<p class="card-desc">${escapeHtml(job.skills)}</p>` : ''}
+                ${job.location ? `<p class="card-desc">${escapeHtml(job.location)} · ${escapeHtml(job.jobType || 'N/A')}</p>` : ''}
+                ${job.skills ? `<p class="card-desc"><strong>Skills:</strong> ${escapeHtml(job.skills)}</p>` : ''}
+                ${job.experience ? `<p class="card-desc"><strong>Experience:</strong> ${escapeHtml(job.experience)}</p>` : ''}
+                ${job.lastDate ? `<p class="card-desc"><strong>Deadline:</strong> ${formatDate(job.lastDate)}</p>` : ''}
+                ${job.eligibilityCriteria ? `<p class="card-desc"><strong>Eligibility:</strong> ${escapeHtml(job.eligibilityCriteria)}</p>` : ''}
             </div>
             <div class="job-salary-badge">${formatSalary(job.salary)}/yr</div>
             ${actionBtnHtml}
@@ -552,11 +570,31 @@ async function loadRecruiterDashboard() {
         state.jobs = await apiFetch('/jobs/my') || [];
         state.students = await apiFetch('/students') || [];
         state.applications = await apiFetch('/apply/recruiter/my') || [];
-        
+
+        updateRecruiterApprovalNotice();
         renderRecruiterJobs();
         renderRecruiterApplications();
     } catch (err) {
         showToast('Error loading recruiter dashboard', 'error');
+    }
+}
+
+async function updateRecruiterApprovalNotice() {
+    if (!el.recruiterApprovalNotice) return;
+
+    try {
+        const profile = await apiFetch('/recruiters/me');
+        if (profile && !profile.approved) {
+            el.recruiterApprovalNotice.textContent = 'Your account is pending admin approval. You cannot post jobs until approved.';
+            el.recruiterApprovalNotice.classList.remove('hidden');
+            el.jobSubmitBtn.disabled = true;
+        } else {
+            el.recruiterApprovalNotice.classList.add('hidden');
+            el.jobSubmitBtn.disabled = false;
+        }
+    } catch (err) {
+        el.recruiterApprovalNotice.classList.add('hidden');
+        el.jobSubmitBtn.disabled = false;
     }
 }
 
@@ -576,6 +614,7 @@ function renderRecruiterJobs() {
             <div class="job-list-details">
                 <h4>${escapeHtml(job.title)}</h4>
                 <p>${escapeHtml(job.company)} &bull; ${formatSalary(job.salary)}/yr</p>
+                ${job.location ? `<p>${escapeHtml(job.location)} · ${escapeHtml(job.jobType || 'N/A')}</p>` : ''}
             </div>
             <div class="btn-group">
                 <button class="btn btn-secondary btn-sm" onclick="populateEditJob(${job.id})">Edit</button>
@@ -625,20 +664,14 @@ function renderRecruiterApplications() {
 async function handleJobSubmit(e) {
     e.preventDefault();
     const jobId = el.jobIdInput.value;
-    const title = el.jobTitleInput.value;
-    const company = el.jobCompanyInput.value;
-    const salary = parseFloat(el.jobSalaryInput.value);
-    
+    const payload = collectJobPayload();
+
     const isEdit = !!jobId;
     const url = isEdit ? `/jobs/${jobId}` : '/jobs';
     const method = isEdit ? 'PUT' : 'POST';
-    
+
     try {
-        await apiFetch(url, {
-            method,
-            body: { title, company, salary }
-        });
-        
+        await apiFetch(url, { method, body: payload });
         showToast(isEdit ? 'Job updated successfully!' : 'Job posted successfully!', 'success');
         resetJobForm();
         loadRecruiterDashboard();
@@ -647,15 +680,37 @@ async function handleJobSubmit(e) {
     }
 }
 
+function collectJobPayload() {
+    return {
+        title: el.jobTitleInput.value.trim(),
+        company: el.jobCompanyInput.value.trim(),
+        salary: parseFloat(el.jobSalaryInput.value),
+        location: el.jobLocationInput.value.trim() || null,
+        jobType: el.jobTypeInput.value || null,
+        experience: el.jobExperienceInput.value.trim() || null,
+        lastDate: el.jobLastDateInput.value || null,
+        skills: el.jobSkillsInput.value.trim() || null,
+        eligibilityCriteria: el.jobEligibilityInput.value.trim() || null,
+        description: el.jobDescriptionInput.value.trim() || null
+    };
+}
+
 function populateEditJob(id) {
     const job = state.jobs.find(j => j.id === id);
     if (!job) return;
-    
+
     el.jobIdInput.value = job.id;
-    el.jobTitleInput.value = job.title;
-    el.jobCompanyInput.value = job.company;
-    el.jobSalaryInput.value = job.salary;
-    
+    el.jobTitleInput.value = job.title || '';
+    el.jobCompanyInput.value = job.company || '';
+    el.jobSalaryInput.value = job.salary || '';
+    el.jobLocationInput.value = job.location || '';
+    el.jobTypeInput.value = job.jobType || '';
+    el.jobExperienceInput.value = job.experience || '';
+    el.jobLastDateInput.value = job.lastDate || '';
+    el.jobSkillsInput.value = job.skills || '';
+    el.jobEligibilityInput.value = job.eligibilityCriteria || '';
+    el.jobDescriptionInput.value = job.description || '';
+
     el.jobFormTitle.textContent = 'Edit Job Details';
     el.jobSubmitBtn.textContent = 'Save Changes';
     el.cancelEditBtn.classList.remove('hidden');
@@ -701,21 +756,111 @@ async function updateApplicationStatus(appId, newStatus) {
 
 async function loadAdminDashboard() {
     try {
-        // Fetch all jobs, students, and applications
+        state.adminStats = await apiFetch('/admin/stats') || {};
+        state.users = await apiFetch('/admin/users') || [];
+        state.recruiters = await apiFetch('/admin/recruiters') || [];
         state.students = await apiFetch('/students') || [];
         state.jobs = await apiFetch('/jobs') || [];
         state.applications = await apiFetch('/apply/all') || [];
-        
-        // Render stats counters
-        el.statStudents.textContent = state.students.length;
-        el.statJobs.textContent = state.jobs.length;
-        el.statApplications.textContent = state.applications.length;
-        
+
+        el.statStudents.textContent = state.adminStats.totalStudents ?? state.students.length;
+        el.statRecruiters.textContent = state.adminStats.totalRecruiters ?? 0;
+        el.statPendingRecruiters.textContent = state.adminStats.pendingRecruiters ?? 0;
+        el.statJobs.textContent = state.adminStats.totalJobs ?? state.jobs.length;
+        el.statApplications.textContent = state.adminStats.totalApplications ?? state.applications.length;
+
         renderAdminChart();
+        renderAdminRecruiters();
+        renderAdminUsers();
         renderAdminStudents();
         renderAdminJobs();
     } catch (err) {
         showToast('Error loading admin dashboard', 'error');
+    }
+}
+
+function renderAdminRecruiters() {
+    el.adminRecruitersList.innerHTML = '';
+
+    if (state.recruiters.length === 0) {
+        el.adminRecruitersList.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-secondary);">No recruiters registered.</td></tr>';
+        return;
+    }
+
+    state.recruiters.forEach(recruiter => {
+        const tr = document.createElement('tr');
+        const statusBadge = recruiter.approved
+            ? '<span class="badge badge-selected">Approved</span>'
+            : '<span class="badge badge-review">Pending</span>';
+
+        tr.innerHTML = `
+            <td>${recruiter.id}</td>
+            <td><strong>${escapeHtml(recruiter.username)}</strong></td>
+            <td>${escapeHtml(recruiter.companyName)}</td>
+            <td>${escapeHtml(recruiter.email || '')}</td>
+            <td>${statusBadge}</td>
+            <td>
+                ${recruiter.approved
+                    ? `<button class="btn btn-secondary btn-sm" onclick="adminRejectRecruiter(${recruiter.id})">Revoke</button>`
+                    : `<button class="btn btn-primary btn-sm" onclick="adminApproveRecruiter(${recruiter.id})">Approve</button>`}
+            </td>
+        `;
+        el.adminRecruitersList.appendChild(tr);
+    });
+}
+
+function renderAdminUsers() {
+    el.adminUsersList.innerHTML = '';
+
+    if (state.users.length === 0) {
+        el.adminUsersList.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">No users found.</td></tr>';
+        return;
+    }
+
+    state.users.forEach(user => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${user.id}</td>
+            <td><strong>${escapeHtml(user.username)}</strong></td>
+            <td>${escapeHtml(user.email || '')}</td>
+            <td>${user.role}</td>
+            <td>
+                <button class="btn btn-danger btn-sm" onclick="adminDeleteUser(${user.id})" ${user.role === 'ADMIN' ? 'disabled' : ''}>Delete</button>
+            </td>
+        `;
+        el.adminUsersList.appendChild(tr);
+    });
+}
+
+async function adminApproveRecruiter(id) {
+    try {
+        await apiFetch(`/admin/recruiters/${id}/approve`, { method: 'PUT' });
+        showToast('Recruiter approved!', 'success');
+        loadAdminDashboard();
+    } catch (err) {
+        showToast(err.message || 'Failed to approve recruiter', 'error');
+    }
+}
+
+async function adminRejectRecruiter(id) {
+    if (!confirm('Revoke approval for this recruiter?')) return;
+    try {
+        await apiFetch(`/admin/recruiters/${id}/reject`, { method: 'PUT' });
+        showToast('Recruiter approval revoked.', 'success');
+        loadAdminDashboard();
+    } catch (err) {
+        showToast(err.message || 'Failed to revoke recruiter', 'error');
+    }
+}
+
+async function adminDeleteUser(id) {
+    if (!confirm('Delete this user account?')) return;
+    try {
+        await apiFetch(`/admin/users/${id}`, { method: 'DELETE' });
+        showToast('User deleted!', 'success');
+        loadAdminDashboard();
+    } catch (err) {
+        showToast(err.message || 'Failed to delete user', 'error');
     }
 }
 
@@ -733,7 +878,7 @@ function renderAdminStudents() {
             <td>${student.id}</td>
             <td><strong>${escapeHtml(student.name)}</strong></td>
             <td>${escapeHtml(student.skills)}</td>
-            <td>${student.cgpa.toFixed(2)}</td>
+            <td>${Number(student.cgpa || 0).toFixed(2)}</td>
             <td>
                 <button class="btn btn-danger btn-sm" onclick="adminDeleteStudent(${student.id})">Delete Profile</button>
             </td>
@@ -828,19 +973,27 @@ function formatSalary(value) {
     return salary > 0 ? `$${salary.toLocaleString()}` : 'Not disclosed';
 }
 
+function formatDate(value) {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleDateString();
+}
+
 function renderAdminChart() {
     const ctx = document.getElementById('adminChart');
     if (!ctx) return;
-    
+
     if (window.adminChartInstance) {
         window.adminChartInstance.destroy();
     }
-    
-    const appliedCount = state.applications.filter(a => a.status === 'APPLIED').length;
-    const reviewCount = state.applications.filter(a => a.status === 'UNDER_REVIEW').length;
-    const interviewCount = state.applications.filter(a => a.status === 'INTERVIEW').length;
-    const selectedCount = state.applications.filter(a => a.status === 'SELECTED').length;
-    const rejectedCount = state.applications.filter(a => a.status === 'REJECTED').length;
+
+    const stats = state.adminStats || {};
+    const appliedCount = stats.applied ?? 0;
+    const reviewCount = stats.underReview ?? 0;
+    const interviewCount = stats.interview ?? 0;
+    const selectedCount = stats.selected ?? 0;
+    const rejectedCount = stats.rejected ?? 0;
 
     const isLight = document.body.classList.contains('light-mode');
     

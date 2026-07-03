@@ -70,25 +70,23 @@ public class JobController {
     @PreAuthorize("hasRole('RECRUITER')")
     @PostMapping
     public Job createJob(@Valid @RequestBody Job job) {
-        Recruiter recruiter = getCurrentRecruiter();
+        Recruiter recruiter = getApprovedRecruiter();
         return jobService.saveJob(job, recruiter);
     }
 
-    // 🔒 ONLY RECRUITER can update their own job
     @PreAuthorize("hasRole('RECRUITER')")
     @PutMapping("/{id}")
     public Job updateJob(
             @PathVariable Long id,
             @Valid @RequestBody Job job) {
-        Recruiter recruiter = getCurrentRecruiter();
+        Recruiter recruiter = getApprovedRecruiter();
         return jobService.updateJob(id, job, recruiter);
     }
 
-    // 🔒 RECRUITER can delete their own job
     @PreAuthorize("hasRole('RECRUITER')")
     @DeleteMapping("/{id}")
     public void deleteJob(@PathVariable Long id) {
-        Recruiter recruiter = getCurrentRecruiter();
+        Recruiter recruiter = getApprovedRecruiter();
         jobService.deleteJob(id, recruiter);
     }
 
@@ -98,6 +96,12 @@ public class JobController {
         if (recruiter == null) {
             throw new RuntimeException("Please create your recruiter profile first");
         }
+        return recruiter;
+    }
+
+    private Recruiter getApprovedRecruiter() {
+        Recruiter recruiter = getCurrentRecruiter();
+        recruiterService.assertRecruiterApproved(recruiter);
         return recruiter;
     }
 }

@@ -200,22 +200,58 @@
             <section id="recruiter-dashboard" class="dashboard-view hidden">
                 <div class="dashboard-grid">
                     <!-- Post / Edit Job -->
-                    <div class="glass-panel job-form-card">
+                    <div class="glass-panel job-form-card full-width">
                         <h3 id="job-form-title">Post a New Job</h3>
                         <p class="card-desc">Fill in details to recruit students.</p>
+                        <p id="recruiter-approval-notice" class="card-desc hidden" style="color: var(--warning, #f59e0b);"></p>
                         <form id="job-form">
                             <input type="hidden" id="job-id">
-                            <div class="form-group">
-                                <label for="job-title">Job Title</label>
-                                <input type="text" id="job-title" placeholder="Software Engineer" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="job-company">Company Name</label>
-                                <input type="text" id="job-company" placeholder="Acme Corp" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="job-salary">Annual Salary ($)</label>
-                                <input type="number" id="job-salary" min="0" placeholder="120000" required>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="job-title">Job Title</label>
+                                    <input type="text" id="job-title" placeholder="Software Engineer" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="job-company">Company Name</label>
+                                    <input type="text" id="job-company" placeholder="Acme Corp" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="job-salary">Annual Salary ($)</label>
+                                    <input type="number" id="job-salary" min="0" placeholder="120000" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="job-location">Location</label>
+                                    <input type="text" id="job-location" placeholder="Bangalore / Remote">
+                                </div>
+                                <div class="form-group">
+                                    <label for="job-type">Job Type</label>
+                                    <select id="job-type">
+                                        <option value="">Select type</option>
+                                        <option value="Full-time">Full-time</option>
+                                        <option value="Internship">Internship</option>
+                                        <option value="Contract">Contract</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="job-experience">Experience Required</label>
+                                    <input type="text" id="job-experience" placeholder="0-2 years / Fresher">
+                                </div>
+                                <div class="form-group">
+                                    <label for="job-last-date">Application Deadline</label>
+                                    <input type="date" id="job-last-date">
+                                </div>
+                                <div class="form-group form-group-span-2">
+                                    <label for="job-skills">Required Skills</label>
+                                    <input type="text" id="job-skills" placeholder="Java, Spring Boot, SQL">
+                                </div>
+                                <div class="form-group form-group-span-2">
+                                    <label for="job-eligibility">Eligibility Criteria</label>
+                                    <textarea id="job-eligibility" rows="2" placeholder="B.Tech CSE/IT, min 7.0 CGPA, 2026 batch"></textarea>
+                                </div>
+                                <div class="form-group form-group-span-2">
+                                    <label for="job-description">Job Description</label>
+                                    <textarea id="job-description" rows="3" placeholder="Role responsibilities and expectations"></textarea>
+                                </div>
                             </div>
                             <div class="btn-group">
                                 <button type="submit" class="btn btn-primary" id="job-submit-btn">Post Job</button>
@@ -267,6 +303,14 @@
                         <div class="stat-label">Total Students</div>
                     </div>
                     <div class="glass-panel stat-card">
+                        <div class="stat-num" id="stat-recruiters">0</div>
+                        <div class="stat-label">Total Recruiters</div>
+                    </div>
+                    <div class="glass-panel stat-card">
+                        <div class="stat-num" id="stat-pending-recruiters">0</div>
+                        <div class="stat-label">Pending Approval</div>
+                    </div>
+                    <div class="glass-panel stat-card">
                         <div class="stat-num" id="stat-jobs">0</div>
                         <div class="stat-label">Total Jobs</div>
                     </div>
@@ -282,6 +326,46 @@
                 </div>
 
                 <div class="dashboard-grid">
+                    <!-- Recruiter Approvals -->
+                    <div class="glass-panel full-width">
+                        <h3>Recruiter Approvals</h3>
+                        <p class="card-desc">Approve recruiters before they can post jobs.</p>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Username</th>
+                                        <th>Company</th>
+                                        <th>Email</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-recruiters-list"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Users Directory -->
+                    <div class="glass-panel full-width">
+                        <h3>All Users</h3>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Username</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-users-list"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
                     <!-- Students Directory -->
                     <div class="glass-panel full-width">
                         <h3>Registered Students Directory</h3>

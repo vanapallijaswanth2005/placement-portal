@@ -1,8 +1,11 @@
 package com.example.placementportal.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
+
+import java.time.LocalDate;
 
 
 @Entity
@@ -25,8 +28,12 @@ public class Job {
     private String location;
     private String experience;
     private String jobType;
-    private String lastDate;
+
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate lastDate;
+
     private String skills;
+    private String eligibilityCriteria;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recruiter_id")
@@ -59,11 +66,14 @@ public class Job {
     public String getJobType() { return jobType; }
     public void setJobType(String jobType) { this.jobType = jobType; }
 
-    public String getLastDate() { return lastDate; }
-    public void setLastDate(String lastDate) { this.lastDate = lastDate; }
+    public LocalDate getLastDate() { return lastDate; }
+    public void setLastDate(LocalDate lastDate) { this.lastDate = lastDate; }
 
     public String getSkills() { return skills; }
     public void setSkills(String skills) { this.skills = skills; }
+
+    public String getEligibilityCriteria() { return eligibilityCriteria; }
+    public void setEligibilityCriteria(String eligibilityCriteria) { this.eligibilityCriteria = eligibilityCriteria; }
 
     public Recruiter getRecruiter() { return recruiter; }
     public void setRecruiter(Recruiter recruiter) { this.recruiter = recruiter; }

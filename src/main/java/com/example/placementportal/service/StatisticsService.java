@@ -37,6 +37,7 @@ public class StatisticsService {
         stats.put("totalRecruiters", recruiterRepo.count());
         stats.put("totalApplications", applicationRepo.count());
         stats.put("totalUsers", userRepo.count());
+        stats.put("pendingRecruiters", recruiterRepo.countByApprovedFalse());
         stats.put("applied", applicationRepo.countByStatus(ApplicationStatus.APPLIED));
         stats.put("underReview", applicationRepo.countByStatus(ApplicationStatus.UNDER_REVIEW));
         stats.put("interview", applicationRepo.countByStatus(ApplicationStatus.INTERVIEW));

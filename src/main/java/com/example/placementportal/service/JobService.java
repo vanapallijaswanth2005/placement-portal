@@ -52,6 +52,7 @@ public class JobService {
         existingJob.setJobType(updatedJob.getJobType());
         existingJob.setLastDate(updatedJob.getLastDate());
         existingJob.setSkills(updatedJob.getSkills());
+        existingJob.setEligibilityCriteria(updatedJob.getEligibilityCriteria());
 
         return repo.save(existingJob);
     }

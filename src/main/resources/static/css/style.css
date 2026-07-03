@@ -189,7 +189,8 @@ h1, h2, h3, h4, .nav-logo {
 }
 
 .form-group input, 
-.form-group select {
+.form-group select,
+.form-group textarea {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;

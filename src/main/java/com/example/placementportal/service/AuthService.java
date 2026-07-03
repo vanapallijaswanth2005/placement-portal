@@ -30,6 +30,9 @@ public class AuthService {
     @Autowired
     private RecruiterRepository recruiterRepository;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
     public String register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already exists");
@@ -76,7 +79,7 @@ public class AuthService {
                 request.getPassword(),
                 user.getPassword())) {
 
-            return JwtUtil.generateToken(
+            return jwtUtil.generateToken(
                     user.getUsername(),
                     user.getRole().name()
             );

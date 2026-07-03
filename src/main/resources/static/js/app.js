@@ -27,8 +27,25 @@ const el = {
     
     // Student Elements
     profileForm: document.getElementById('profile-form'),
+    profileEmail: document.getElementById('profile-email'),
+    profilePhone: document.getElementById('profile-phone'),
+    profileBranch: document.getElementById('profile-branch'),
+    profileYear: document.getElementById('profile-year'),
+    profileCollege: document.getElementById('profile-college'),
     profileSkills: document.getElementById('profile-skills'),
     profileCgpa: document.getElementById('profile-cgpa'),
+    profileLinkedin: document.getElementById('profile-linkedin'),
+    profileGithub: document.getElementById('profile-github'),
+    profileResume: document.getElementById('profile-resume'),
+    profileResumeStatus: document.getElementById('profile-resume-status'),
+    jobSearchForm: document.getElementById('job-search-form'),
+    searchTitle: document.getElementById('search-title'),
+    searchCompany: document.getElementById('search-company'),
+    searchLocation: document.getElementById('search-location'),
+    searchSkills: document.getElementById('search-skills'),
+    searchMinSalary: document.getElementById('search-min-salary'),
+    searchMaxSalary: document.getElementById('search-max-salary'),
+    searchResetBtn: document.getElementById('search-reset-btn'),
     studentJobsList: document.getElementById('student-jobs-list'),
     studentAppsList: document.getElementById('student-applications-list'),
     
@@ -176,6 +193,8 @@ function setupEventListeners() {
     
     // Student Forms Submission
     el.profileForm.addEventListener('submit', handleSaveProfile);
+    el.jobSearchForm.addEventListener('submit', handleJobSearch);
+    el.searchResetBtn.addEventListener('click', resetJobSearch);
     
     // Recruiter Forms Submission
     el.jobForm.addEventListener('submit', handleJobSubmit);
@@ -337,15 +356,14 @@ async function loadStudentDashboard() {
         const profile = await apiFetch('/students/me');
         if (profile && profile.id) {
             state.studentProfile = profile;
-            el.profileSkills.value = profile.skills || '';
-            el.profileCgpa.value = profile.cgpa || '';
+            populateProfileForm(profile);
         } else {
             state.studentProfile = null;
         }
-        
-        state.jobs = await apiFetch('/jobs') || [];
+
+        state.jobs = await fetchJobs();
         state.applications = await apiFetch('/apply/my') || [];
-        
+
         renderStudentJobs();
         renderStudentApplications();
     } catch (err) {
@@ -353,21 +371,95 @@ async function loadStudentDashboard() {
     }
 }
 
+function populateProfileForm(profile) {
+    el.profileEmail.value = profile.email || '';
+    el.profilePhone.value = profile.phone || '';
+    el.profileBranch.value = profile.branch || '';
+    el.profileYear.value = profile.year || '';
+    el.profileCollege.value = profile.college || '';
+    el.profileSkills.value = profile.skills || '';
+    el.profileCgpa.value = profile.cgpa || '';
+    el.profileLinkedin.value = profile.linkedIn || '';
+    el.profileGithub.value = profile.github || '';
+    el.profileResumeStatus.textContent = profile.resumeUrl
+        ? `Current resume: ${profile.resumeUrl}`
+        : 'No resume uploaded yet.';
+}
+
+async function fetchJobs() {
+    const params = new URLSearchParams();
+    if (el.searchTitle.value.trim()) params.set('title', el.searchTitle.value.trim());
+    if (el.searchCompany.value.trim()) params.set('company', el.searchCompany.value.trim());
+    if (el.searchLocation.value.trim()) params.set('location', el.searchLocation.value.trim());
+    if (el.searchSkills.value.trim()) params.set('skills', el.searchSkills.value.trim());
+    if (el.searchMinSalary.value) params.set('minSalary', el.searchMinSalary.value);
+    if (el.searchMaxSalary.value) params.set('maxSalary', el.searchMaxSalary.value);
+    params.set('size', '50');
+
+    const hasFilters = params.has('title') || params.has('company') || params.has('location')
+        || params.has('skills') || params.has('minSalary') || params.has('maxSalary');
+
+    if (hasFilters) {
+        const page = await apiFetch(`/jobs/search?${params.toString()}`);
+        return page?.content || [];
+    }
+
+    return await apiFetch('/jobs') || [];
+}
+
+async function handleJobSearch(e) {
+    e.preventDefault();
+    try {
+        state.jobs = await fetchJobs();
+        renderStudentJobs();
+        showToast(`Found ${state.jobs.length} job(s)`, 'success');
+    } catch (err) {
+        showToast(err.message || 'Job search failed', 'error');
+    }
+}
+
+function resetJobSearch() {
+    el.jobSearchForm.reset();
+    loadStudentDashboard();
+}
+
 async function handleSaveProfile(e) {
     e.preventDefault();
-    const skills = el.profileSkills.value;
-    const cgpa = parseFloat(el.profileCgpa.value);
-    
+
+    const profileData = {
+        name: state.user.username,
+        email: el.profileEmail.value.trim(),
+        phone: el.profilePhone.value.trim(),
+        branch: el.profileBranch.value.trim(),
+        year: el.profileYear.value,
+        college: el.profileCollege.value.trim(),
+        skills: el.profileSkills.value.trim(),
+        cgpa: el.profileCgpa.value ? parseFloat(el.profileCgpa.value) : 0,
+        linkedIn: el.profileLinkedin.value.trim(),
+        github: el.profileGithub.value.trim()
+    };
+
     try {
         const profile = await apiFetch('/students/me', {
             method: 'POST',
-            body: { name: state.user.username, skills, cgpa }
+            body: profileData
         });
-        
+
         state.studentProfile = profile;
+
+        if (el.profileResume.files.length > 0) {
+            const formData = new FormData();
+            formData.append('file', el.profileResume.files[0]);
+            const updated = await apiFetch('/students/me/resume', {
+                method: 'POST',
+                body: formData
+            });
+            state.studentProfile = updated;
+            el.profileResume.value = '';
+        }
+
+        populateProfileForm(state.studentProfile);
         showToast('Profile saved successfully!', 'success');
-        
-        // Reload dashboard components to let student apply for jobs now
         loadStudentDashboard();
     } catch (err) {
         showToast(err.message || 'Failed to save profile', 'error');
@@ -406,6 +498,8 @@ function renderStudentJobs() {
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                     <span>${escapeHtml(job.company)}</span>
                 </div>
+                ${job.location ? `<p class="card-desc">${escapeHtml(job.location)}</p>` : ''}
+                ${job.skills ? `<p class="card-desc">${escapeHtml(job.skills)}</p>` : ''}
             </div>
             <div class="job-salary-badge">${formatSalary(job.salary)}/yr</div>
             ${actionBtnHtml}
@@ -455,14 +549,9 @@ function renderStudentApplications() {
 
 async function loadRecruiterDashboard() {
     try {
-        // Fetch all jobs
-        state.jobs = await apiFetch('/jobs') || [];
-        
-        // Fetch all students (needed to map student names to applications)
+        state.jobs = await apiFetch('/jobs/my') || [];
         state.students = await apiFetch('/students') || [];
-        
-        // Fetch all applications
-        state.applications = await apiFetch('/apply/all') || [];
+        state.applications = await apiFetch('/apply/recruiter/my') || [];
         
         renderRecruiterJobs();
         renderRecruiterApplications();
@@ -474,7 +563,7 @@ async function loadRecruiterDashboard() {
 function renderRecruiterJobs() {
     el.recruiterJobsList.innerHTML = '';
     
-    const recruiterJobs = state.jobs; // Since recruiter roles are currently global, we fetch all
+    const recruiterJobs = state.jobs;
     if (recruiterJobs.length === 0) {
         el.recruiterJobsList.innerHTML = '<p style="color: var(--text-secondary);">No active job postings. Create one on the left!</p>';
         return;

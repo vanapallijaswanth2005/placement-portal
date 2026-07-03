@@ -11,9 +11,11 @@ import com.example.placementportal.service.EmailService;
 import com.example.placementportal.service.JobService;
 import com.example.placementportal.service.RecruiterService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -48,6 +50,12 @@ public class ApplicationController {
 
         Job job = jobService.getJobById(jobId);
 
+        if (service.hasAlreadyApplied(student.getId(), jobId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "You have already applied for this job");
+        }
+
         JobApplication application = new JobApplication();
         application.setStudent(student);
         application.setJob(job);
@@ -55,17 +63,21 @@ public class ApplicationController {
 
         JobApplication saved = service.save(application);
 
+        String recruiterEmail = job.getRecruiter() != null ? job.getRecruiter().getEmail() : null;
+        String jobTitle = job.getTitle();
+        String jobCompany = job.getCompany();
+        String studentName = student.getName();
+
         // Send email notification to recruiter asynchronously
         new Thread(() -> {
             try {
-                Recruiter recruiter = job.getRecruiter();
-                if (recruiter != null && recruiter.getEmail() != null) {
+                if (recruiterEmail != null) {
                     emailService.sendApplicationStatusUpdate(
-                        recruiter.getEmail(),
+                        recruiterEmail,
                         "Recruiter",
-                        job.getTitle(),
-                        job.getCompany(),
-                        "New application from " + student.getName()
+                        jobTitle,
+                        jobCompany,
+                        "New application from " + studentName
                     );
                 }
             } catch (Exception e) {
@@ -92,14 +104,16 @@ public class ApplicationController {
     @PreAuthorize("hasRole('RECRUITER')")
     @GetMapping("/{id:\\d+}")
     public JobApplication getApplicationById(@PathVariable Long id) {
-        return service.getById(id);
+        Recruiter recruiter = getCurrentRecruiter();
+        return service.getByIdForRecruiter(id, recruiter.getId());
     }
 
     // 🔍 RECRUITER: Get applications for a specific job
     @PreAuthorize("hasRole('RECRUITER')")
     @GetMapping("/job/{jobId}")
     public List<JobApplication> getApplicationsByJob(@PathVariable Long jobId) {
-        return service.getByJobId(jobId);
+        Recruiter recruiter = getCurrentRecruiter();
+        return service.getByJobIdForRecruiter(jobId, recruiter.getId());
     }
 
     // 🔍 RECRUITER: Get all applications for my jobs
@@ -121,11 +135,10 @@ public class ApplicationController {
             @PathVariable Long id,
             @RequestParam ApplicationStatus status) {
 
-        JobApplication app = service.getById(id);
-        app.setStatus(status);
-        JobApplication updatedApp = service.save(app);
-        Student student = app.getStudent();
-        Job job = app.getJob();
+        Recruiter recruiter = getCurrentRecruiter();
+        JobApplication updatedApp = service.updateStatusForRecruiter(id, status, recruiter.getId());
+        Student student = updatedApp.getStudent();
+        Job job = updatedApp.getJob();
         String studentEmail = student != null ? studentService.getStudentUserEmail(student.getId()) : null;
         String studentName = student != null ? student.getName() : null;
 
@@ -154,5 +167,16 @@ public class ApplicationController {
     @GetMapping("/all")
     public List<JobApplication> getAllApplications() {
         return service.getAll();
+    }
+
+    private Recruiter getCurrentRecruiter() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Recruiter recruiter = recruiterService.getRecruiterByUsername(username);
+        if (recruiter == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Please complete your recruiter profile first");
+        }
+        return recruiter;
     }
 }

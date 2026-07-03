@@ -14,6 +14,7 @@ import java.util.List;
 public interface JobRepository extends JpaRepository<Job, Long> {
 
     List<Job> findByRecruiterId(Long recruiterId);
+    boolean existsByIdAndRecruiterId(Long id, Long recruiterId);
 
     @Query("SELECT j FROM Job j WHERE " +
            "(:title IS NULL OR LOWER(j.title) LIKE LOWER(CONCAT('%', :title, '%'))) AND " +

@@ -1,10 +1,19 @@
-const API_BASE_URL = ''; // using relative URL since frontend is served by backend
+const API_BASE_URL = '';
+
+function getStoredToken() {
+    return localStorage.getItem('token') || localStorage.getItem('jwt_token');
+}
+
+function clearStoredAuth() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('jwt_token');
+    localStorage.removeItem('user_role');
+}
 
 const api = {
-    // Helper for fetch with Authorization
     async fetch(endpoint, options = {}) {
-        const token = localStorage.getItem('jwt_token');
-        
+        const token = getStoredToken();
+
         const headers = {
             'Content-Type': 'application/json',
             ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
@@ -18,26 +27,21 @@ const api = {
 
         try {
             const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-            
-            // If text response (like in AuthController which returns String)
             const text = await response.text();
-            
+
             if (!response.ok) {
                 if (response.status === 401 || response.status === 403) {
-                    // Token expired or unauthorized
-                    localStorage.removeItem('jwt_token');
-                    localStorage.removeItem('user_role');
-                    window.location.href = 'login.html';
+                    clearStoredAuth();
+                    window.location.href = '/index.html';
                     throw new Error('Unauthorized. Please login again.');
                 }
                 throw new Error(text || 'API Request failed');
             }
 
-            // Try to parse as JSON if it's not a plain string
             try {
                 return JSON.parse(text);
             } catch (e) {
-                return text; // Return plain text if not JSON
+                return text;
             }
         } catch (error) {
             console.error('API Error:', error);
@@ -68,32 +72,35 @@ const api = {
     }
 };
 
-// Utils
 function getRole() {
-    return localStorage.getItem('user_role');
+    const token = getStoredToken();
+    if (!token) {
+        return localStorage.getItem('user_role');
+    }
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.role || localStorage.getItem('user_role');
+    } catch (e) {
+        return localStorage.getItem('user_role');
+    }
 }
 
 function isLoggedIn() {
-    return !!localStorage.getItem('jwt_token');
+    return !!getStoredToken();
 }
 
 function logout() {
-    localStorage.removeItem('jwt_token');
-    localStorage.removeItem('user_role');
-    window.location.href = 'login.html';
+    clearStoredAuth();
+    window.location.href = '/index.html';
 }
 
 function checkAuth(requiredRole) {
     if (!isLoggedIn()) {
-        window.location.href = 'login.html';
+        window.location.href = '/index.html';
         return;
     }
-    
+
     if (requiredRole && getRole() !== requiredRole) {
-        // Redirect to their respective dashboard
-        const role = getRole();
-        if (role === 'STUDENT') window.location.href = 'student-dashboard.html';
-        else if (role === 'RECRUITER') window.location.href = 'recruiter-dashboard.html';
-        else window.location.href = 'index.html';
+        window.location.href = '/index.html';
     }
 }

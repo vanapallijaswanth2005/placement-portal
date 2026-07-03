@@ -22,7 +22,7 @@ public class Student {
 
     private String skills;
 
-    @Min(value = 1)
+    @Min(value = 0, message = "CGPA cannot be negative")
     @Max(value = 10)
     private double cgpa;
 

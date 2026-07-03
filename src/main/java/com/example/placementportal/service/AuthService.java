@@ -4,8 +4,10 @@ import com.example.placementportal.dto.LoginRequest;
 import com.example.placementportal.dto.RegisterRequest;
 import com.example.placementportal.entity.Recruiter;
 import com.example.placementportal.entity.Role;
+import com.example.placementportal.entity.Student;
 import com.example.placementportal.entity.User;
 import com.example.placementportal.repository.RecruiterRepository;
+import com.example.placementportal.repository.StudentRepository;
 import com.example.placementportal.repository.UserRepository;
 import com.example.placementportal.security.JwtUtil;
 
@@ -31,9 +33,18 @@ public class AuthService {
     private RecruiterRepository recruiterRepository;
 
     @Autowired
+    private StudentRepository studentRepository;
+
+    @Autowired
     private JwtUtil jwtUtil;
 
     public String register(RegisterRequest request) {
+        if (request.getRole() == Role.ADMIN) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Admin accounts cannot be created via public registration");
+        }
+
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Username already exists");
         }
@@ -58,6 +69,12 @@ public class AuthService {
             recruiter.setCompanyName("Not specified");
             recruiter.setEmail(savedUser.getEmail());
             recruiterRepository.save(recruiter);
+        } else if (savedUser.getRole() == Role.STUDENT) {
+            Student student = new Student();
+            student.setUser(savedUser);
+            student.setName(savedUser.getUsername());
+            student.setEmail(savedUser.getEmail());
+            studentRepository.save(student);
         }
 
         // Send welcome email asynchronously

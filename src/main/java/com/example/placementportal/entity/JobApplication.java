@@ -3,6 +3,7 @@ package com.example.placementportal.entity;
 import jakarta.persistence.*;
 
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"student_id", "job_id"}))
 public class JobApplication {
 
     @Id

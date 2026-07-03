@@ -65,7 +65,6 @@
                     <select id="register-role" required>
                         <option value="STUDENT">Student (looking for jobs)</option>
                         <option value="RECRUITER">Recruiter (hiring talent)</option>
-                        <option value="ADMIN">Administrator (managing system)</option>
                     </select>
                 </div>
                 <button type="submit" class="btn btn-primary" id="register-btn">
@@ -96,28 +95,79 @@
             <section id="student-dashboard" class="dashboard-view hidden">
                 <div class="dashboard-grid">
                     <!-- Profile Management -->
-                    <div class="glass-panel profile-card">
+                    <div class="glass-panel profile-card full-width">
                         <h3>My Student Profile</h3>
                         <p class="card-desc">Keep your details up-to-date for recruiters.</p>
                         <form id="profile-form">
-                            <div class="form-group">
-                                <label for="profile-skills">Skills (comma separated)</label>
-                                <input type="text" id="profile-skills" placeholder="Java, React, SQL, Spring Boot" required>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="profile-email">Email</label>
+                                    <input type="email" id="profile-email" placeholder="you@college.edu" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="profile-phone">Phone</label>
+                                    <input type="tel" id="profile-phone" placeholder="+91 9876543210">
+                                </div>
+                                <div class="form-group">
+                                    <label for="profile-branch">Branch</label>
+                                    <input type="text" id="profile-branch" placeholder="CSE, ECE, IT...">
+                                </div>
+                                <div class="form-group">
+                                    <label for="profile-year">Year</label>
+                                    <select id="profile-year">
+                                        <option value="">Select year</option>
+                                        <option value="1">1st Year</option>
+                                        <option value="2">2nd Year</option>
+                                        <option value="3">3rd Year</option>
+                                        <option value="4">4th Year</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="profile-college">College</label>
+                                    <input type="text" id="profile-college" placeholder="Your college name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="profile-cgpa">CGPA (0 to 10)</label>
+                                    <input type="number" id="profile-cgpa" min="0" max="10" step="0.01" placeholder="8.50">
+                                </div>
+                                <div class="form-group form-group-span-2">
+                                    <label for="profile-skills">Skills (comma separated)</label>
+                                    <input type="text" id="profile-skills" placeholder="Java, React, SQL, Spring Boot">
+                                </div>
+                                <div class="form-group">
+                                    <label for="profile-linkedin">LinkedIn URL</label>
+                                    <input type="url" id="profile-linkedin" placeholder="https://linkedin.com/in/username">
+                                </div>
+                                <div class="form-group">
+                                    <label for="profile-github">GitHub URL</label>
+                                    <input type="url" id="profile-github" placeholder="https://github.com/username">
+                                </div>
                             </div>
                             <div class="form-group">
-                                <label for="profile-cgpa">CGPA (1.0 to 10.0)</label>
-                                <input type="number" id="profile-cgpa" min="1" max="10" step="0.01" placeholder="8.50" required>
+                                <label for="profile-resume">Resume (PDF only)</label>
+                                <input type="file" id="profile-resume" accept="application/pdf">
+                                <p id="profile-resume-status" class="card-desc" style="margin-top: 0.5rem;"></p>
                             </div>
-                            <button type="submit" class="btn btn-primary btn-block">Save Profile</button>
+                            <button type="submit" class="btn btn-primary">Save Profile</button>
                         </form>
                     </div>
 
                     <!-- Available Jobs -->
-                    <div class="glass-panel jobs-explorer">
+                    <div class="glass-panel jobs-explorer full-width">
                         <div class="section-header">
                             <h3>Explore Open Roles</h3>
-                            <p class="card-desc">Apply with a single click based on your profile.</p>
+                            <p class="card-desc">Search and apply based on your profile.</p>
                         </div>
+                        <form id="job-search-form" class="search-bar">
+                            <input type="text" id="search-title" placeholder="Job title">
+                            <input type="text" id="search-company" placeholder="Company">
+                            <input type="text" id="search-location" placeholder="Location">
+                            <input type="text" id="search-skills" placeholder="Skills">
+                            <input type="number" id="search-min-salary" placeholder="Min salary" min="0">
+                            <input type="number" id="search-max-salary" placeholder="Max salary" min="0">
+                            <button type="submit" class="btn btn-primary btn-sm">Search</button>
+                            <button type="button" id="search-reset-btn" class="btn btn-secondary btn-sm">Reset</button>
+                        </form>
                         <div id="student-jobs-list" class="jobs-grid">
                             <!-- Dynamically loaded jobs -->
                         </div>

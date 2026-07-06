@@ -3,7 +3,7 @@ package com.example.placementportal.controller;
 import org.springframework.security.access.prepost.PreAuthorize;
 import com.example.placementportal.entity.Student;
 import com.example.placementportal.service.StudentService;
-import com.example.placementportal.service.FileUploadService;
+import com.example.placementportal.service.StorageService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -20,13 +20,16 @@ public class StudentController {
     private StudentService studentService;
 
     @Autowired
-    private FileUploadService fileUploadService;
+    private StorageService storageService;
 
     // 🔒 Only RECRUITER or ADMIN can see list of all students
     @PreAuthorize("hasAnyRole('RECRUITER', 'ADMIN')")
     @GetMapping
-    public List<Student> getAllStudents() {
-        return studentService.getAllStudents();
+    public org.springframework.data.domain.Page<Student> getAllStudents(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        return studentService.getAllStudents(pageable);
     }
 
     // 🎓 STUDENT: Get current student profile
@@ -51,7 +54,7 @@ public class StudentController {
     public Student uploadResume(@RequestParam("file") MultipartFile file) {
         try {
             String username = SecurityContextHolder.getContext().getAuthentication().getName();
-            String resumeUrl = fileUploadService.uploadResume(file);
+            String resumeUrl = storageService.uploadFile(file);
 
             Student student = studentService.getStudentByUsername(username);
             if (student == null) {

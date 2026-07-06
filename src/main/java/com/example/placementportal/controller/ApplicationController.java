@@ -38,6 +38,9 @@ public class ApplicationController {
     @Autowired
     private RecruiterService recruiterService;
 
+    @Autowired
+    private com.example.placementportal.service.CsvExportService csvExportService;
+
     // 🎓 STUDENT: Apply for job
     @PreAuthorize("hasRole('STUDENT')")
     @PostMapping
@@ -69,21 +72,19 @@ public class ApplicationController {
         String studentName = student.getName();
 
         // Send email notification to recruiter asynchronously
-        new Thread(() -> {
-            try {
-                if (recruiterEmail != null) {
-                    emailService.sendApplicationStatusUpdate(
-                        recruiterEmail,
-                        "Recruiter",
-                        jobTitle,
-                        jobCompany,
-                        "New application from " + studentName
-                    );
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
+        try {
+            if (recruiterEmail != null) {
+                emailService.sendApplicationStatusUpdate(
+                    recruiterEmail,
+                    "Recruiter",
+                    jobTitle,
+                    jobCompany,
+                    "New application from " + studentName
+                );
             }
-        }).start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         return saved;
     }
@@ -119,13 +120,16 @@ public class ApplicationController {
     // 🔍 RECRUITER: Get all applications for my jobs
     @PreAuthorize("hasRole('RECRUITER')")
     @GetMapping("/recruiter/my")
-    public List<JobApplication> getMyRecruiterApplications() {
+    public org.springframework.data.domain.Page<JobApplication> getMyRecruiterApplications(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Recruiter recruiter = recruiterService.getRecruiterByUsername(username);
         if (recruiter == null) {
-            return java.util.Collections.emptyList();
+            return org.springframework.data.domain.Page.empty();
         }
-        return service.getByRecruiterId(recruiter.getId());
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        return service.getByRecruiterId(recruiter.getId(), pageable);
     }
 
     // 📋 RECRUITER: Update application status
@@ -143,21 +147,19 @@ public class ApplicationController {
         String studentName = student != null ? student.getName() : null;
 
         // Send status update email to student asynchronously
-        new Thread(() -> {
-            try {
-                if (studentEmail != null && job != null) {
-                        emailService.sendApplicationStatusUpdate(
-                            studentEmail,
-                            studentName,
-                            job.getTitle(),
-                            job.getCompany(),
-                            status.name()
-                        );
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
+        try {
+            if (studentEmail != null && job != null) {
+                    emailService.sendApplicationStatusUpdate(
+                        studentEmail,
+                        studentName,
+                        job.getTitle(),
+                        job.getCompany(),
+                        status.name()
+                    );
             }
-        }).start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         return updatedApp;
     }
@@ -165,8 +167,33 @@ public class ApplicationController {
     // 📊 RECRUITER or ADMIN: View all applications
     @PreAuthorize("hasAnyRole('RECRUITER', 'ADMIN')")
     @GetMapping("/all")
-    public List<JobApplication> getAllApplications() {
-        return service.getAll();
+    public org.springframework.data.domain.Page<JobApplication> getAllApplications(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        return service.getAll(pageable);
+    }
+
+    // 📊 RECRUITER or ADMIN: Export applicants for a specific job to CSV
+    @PreAuthorize("hasAnyRole('RECRUITER', 'ADMIN')")
+    @GetMapping("/job/{jobId}/export")
+    public void exportApplicantsForJob(@PathVariable Long jobId, jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException {
+        List<JobApplication> applications;
+        
+        // If it's a recruiter, verify ownership
+        if (SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_RECRUITER"))) {
+            Recruiter recruiter = getCurrentRecruiter();
+            applications = service.getByJobIdForRecruiter(jobId, recruiter.getId());
+        } else {
+            // Admin can export for any job
+            applications = service.getByJobId(jobId);
+        }
+
+        response.setContentType("text/csv");
+        response.setHeader("Content-Disposition", "attachment; filename=\"applicants_job_" + jobId + ".csv\"");
+        
+        csvExportService.exportApplicationsToCsv(response.getWriter(), applications);
     }
 
     private Recruiter getCurrentRecruiter() {

@@ -28,8 +28,11 @@ public class JobController {
 
     // ✅ PUBLIC (any logged-in user can view jobs)
     @GetMapping
-    public List<Job> getAllJobs() {
-        return jobService.getAllJobs();
+    public org.springframework.data.domain.Page<Job> getAllJobs(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        return jobService.getAllJobs(pageable);
     }
 
     // 🔍 Search with pagination and sorting
@@ -61,9 +64,12 @@ public class JobController {
     // 🔒 RECRUITER: Get my own jobs
     @PreAuthorize("hasRole('RECRUITER')")
     @GetMapping("/my")
-    public List<Job> getMyJobs() {
+    public org.springframework.data.domain.Page<Job> getMyJobs(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
         Recruiter recruiter = getCurrentRecruiter();
-        return jobService.getJobsByRecruiter(recruiter.getId());
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        return jobService.getJobsByRecruiter(recruiter.getId(), pageable);
     }
 
     // 🔒 ONLY RECRUITER can create job (linked to their profile)

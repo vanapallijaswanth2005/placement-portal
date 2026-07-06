@@ -37,6 +37,10 @@ public class JobApplicationService {
         return repo.findAll();
     }
 
+    public org.springframework.data.domain.Page<JobApplication> getAll(org.springframework.data.domain.Pageable pageable) {
+        return repo.findAll(pageable);
+    }
+
     // 🎓 Get applications by student ID
     public List<JobApplication> getByStudentId(Long studentId) {
         return repo.findByStudentId(studentId);
@@ -50,6 +54,10 @@ public class JobApplicationService {
     // 🔍 Get applications for all jobs owned by a recruiter
     public List<JobApplication> getByRecruiterId(Long recruiterId) {
         return repo.findByJobRecruiterId(recruiterId);
+    }
+
+    public org.springframework.data.domain.Page<JobApplication> getByRecruiterId(Long recruiterId, org.springframework.data.domain.Pageable pageable) {
+        return repo.findByJobRecruiterId(recruiterId, pageable);
     }
 
     // 📊 Count by status

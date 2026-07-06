@@ -20,6 +20,10 @@ public class JobService {
         return repo.findAll();
     }
 
+    public Page<Job> getAllJobs(Pageable pageable) {
+        return repo.findAll(pageable);
+    }
+
     public Job getJobById(Long id) {
         return repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Job not found with id: " + id));
@@ -27,6 +31,10 @@ public class JobService {
 
     public List<Job> getJobsByRecruiter(Long recruiterId) {
         return repo.findByRecruiterId(recruiterId);
+    }
+
+    public Page<Job> getJobsByRecruiter(Long recruiterId, Pageable pageable) {
+        return repo.findByRecruiterId(recruiterId, pageable);
     }
 
     public Job saveJob(Job job, Recruiter recruiter) {

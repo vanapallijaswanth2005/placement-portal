@@ -56,6 +56,12 @@ public class RecruiterService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<AdminRecruiterResponse> getAllRecruitersForAdmin(org.springframework.data.domain.Pageable pageable) {
+        return recruiterRepo.findAll(pageable)
+                .map(this::toAdminResponse);
+    }
+
     public Recruiter setApprovalStatus(Long recruiterId, boolean approved) {
         Recruiter recruiter = recruiterRepo.findById(recruiterId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Recruiter not found"));

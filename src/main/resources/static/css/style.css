@@ -755,3 +755,26 @@ body.light-mode .skeleton {
 .btn-icon:hover {
     background: rgba(255,255,255,0.1);
 }
+
+/* Pagination Controls */
+.pagination-controls {
+    margin-top: 1rem;
+}
+.pagination-controls > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+}
+.pagination-controls span {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+.pagination-controls .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}

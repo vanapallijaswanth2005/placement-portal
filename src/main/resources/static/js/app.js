@@ -8,7 +8,17 @@ const state = {
     students: [],
     users: [],
     recruiters: [],
-    adminStats: null
+    adminStats: null,
+    pages: {
+        adminUsers: 0,
+        adminRecruiters: 0,
+        adminStudents: 0,
+        adminJobs: 0,
+        adminApps: 0,
+        recruiterJobs: 0,
+        recruiterApps: 0,
+        studentApps: 0
+    }
 };
 
 // UI Section Elements
@@ -117,6 +127,30 @@ function showToast(message, type = 'info') {
         background: isLight ? '#ffffff' : '#1e1e2d',
         color: isLight ? '#000000' : '#ffffff'
     });
+}
+
+function renderPaginationControls(containerId, pageData, onPageChange) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    if (!pageData || pageData.totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    container.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding: 0.5rem;">
+            <button class="btn btn-secondary btn-sm" ${pageData.first ? 'disabled' : ''} id="${containerId}-prev">Previous</button>
+            <span>Page ${pageData.number + 1} of ${pageData.totalPages}</span>
+            <button class="btn btn-secondary btn-sm" ${pageData.last ? 'disabled' : ''} id="${containerId}-next">Next</button>
+        </div>
+    `;
+    
+    const prevBtn = document.getElementById(`${containerId}-prev`);
+    const nextBtn = document.getElementById(`${containerId}-next`);
+    
+    if (prevBtn) prevBtn.addEventListener('click', () => onPageChange(pageData.number - 1));
+    if (nextBtn) nextBtn.addEventListener('click', () => onPageChange(pageData.number + 1));
 }
 
 // Fetch wrapper with JWT headers and error handling
@@ -419,7 +453,8 @@ async function fetchJobs() {
         return page?.content || [];
     }
 
-    return await apiFetch('/jobs') || [];
+    const page = await apiFetch('/jobs?size=50');
+    return page?.content || [];
 }
 
 async function handleJobSearch(e) {
@@ -567,13 +602,18 @@ function renderStudentApplications() {
 
 async function loadRecruiterDashboard() {
     try {
-        state.jobs = await apiFetch('/jobs/my') || [];
-        state.students = await apiFetch('/students') || [];
-        state.applications = await apiFetch('/apply/recruiter/my') || [];
+        const jobsPage = await apiFetch(`/jobs/my?page=${state.pages.recruiterJobs}&size=10`);
+        state.jobs = jobsPage?.content || [];
+        
+        const appsPage = await apiFetch(`/apply/recruiter/my?page=${state.pages.recruiterApps}&size=10`);
+        state.applications = appsPage?.content || [];
 
         updateRecruiterApprovalNotice();
         renderRecruiterJobs();
         renderRecruiterApplications();
+        
+        renderPaginationControls('recruiter-jobs-pagination', jobsPage, (p) => { state.pages.recruiterJobs = p; loadRecruiterDashboard(); });
+        renderPaginationControls('recruiter-applications-pagination', appsPage, (p) => { state.pages.recruiterApps = p; loadRecruiterDashboard(); });
     } catch (err) {
         showToast('Error loading recruiter dashboard', 'error');
     }
@@ -619,6 +659,7 @@ function renderRecruiterJobs() {
             <div class="btn-group">
                 <button class="btn btn-secondary btn-sm" onclick="populateEditJob(${job.id})">Edit</button>
                 <button class="btn btn-danger btn-sm" onclick="deleteJob(${job.id})">Delete</button>
+                <button class="btn btn-primary btn-sm" onclick="exportCsv(${job.id})">Export CSV</button>
             </div>
         `;
         el.recruiterJobsList.appendChild(div);
@@ -750,6 +791,33 @@ async function updateApplicationStatus(appId, newStatus) {
     }
 }
 
+async function exportCsv(jobId) {
+    try {
+        const response = await fetch(`/apply/job/${jobId}/export`, {
+            headers: {
+                'Authorization': `Bearer ${state.token}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error ${response.status}`);
+        }
+        
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `applicants_job_${jobId}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        showToast('Download started!', 'success');
+    } catch (err) {
+        showToast(err.message || 'Failed to download CSV', 'error');
+    }
+}
+
 // ==========================================================================
 // ADMIN ACTIONS & RENDERING
 // ==========================================================================
@@ -757,11 +825,21 @@ async function updateApplicationStatus(appId, newStatus) {
 async function loadAdminDashboard() {
     try {
         state.adminStats = await apiFetch('/admin/stats') || {};
-        state.users = await apiFetch('/admin/users') || [];
-        state.recruiters = await apiFetch('/admin/recruiters') || [];
-        state.students = await apiFetch('/students') || [];
-        state.jobs = await apiFetch('/jobs') || [];
-        state.applications = await apiFetch('/apply/all') || [];
+        
+        const usersPage = await apiFetch(`/admin/users?page=${state.pages.adminUsers}&size=10`);
+        state.users = usersPage?.content || [];
+        
+        const recruitersPage = await apiFetch(`/admin/recruiters?page=${state.pages.adminRecruiters}&size=10`);
+        state.recruiters = recruitersPage?.content || [];
+        
+        const studentsPage = await apiFetch(`/students?page=${state.pages.adminStudents}&size=10`);
+        state.students = studentsPage?.content || [];
+        
+        const jobsPage = await apiFetch(`/jobs?page=${state.pages.adminJobs}&size=10`);
+        state.jobs = jobsPage?.content || [];
+        
+        const appsPage = await apiFetch(`/apply/all?page=${state.pages.adminApps}&size=10`);
+        state.applications = appsPage?.content || [];
 
         el.statStudents.textContent = state.adminStats.totalStudents ?? state.students.length;
         el.statRecruiters.textContent = state.adminStats.totalRecruiters ?? 0;
@@ -774,6 +852,11 @@ async function loadAdminDashboard() {
         renderAdminUsers();
         renderAdminStudents();
         renderAdminJobs();
+        
+        renderPaginationControls('admin-users-pagination', usersPage, (p) => { state.pages.adminUsers = p; loadAdminDashboard(); });
+        renderPaginationControls('admin-recruiters-pagination', recruitersPage, (p) => { state.pages.adminRecruiters = p; loadAdminDashboard(); });
+        renderPaginationControls('admin-students-pagination', studentsPage, (p) => { state.pages.adminStudents = p; loadAdminDashboard(); });
+        renderPaginationControls('admin-jobs-pagination', jobsPage, (p) => { state.pages.adminJobs = p; loadAdminDashboard(); });
     } catch (err) {
         showToast('Error loading admin dashboard', 'error');
     }

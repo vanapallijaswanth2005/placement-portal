@@ -11,7 +11,6 @@ import java.util.List;
 
 @Service
 public class StudentService {
-
     @Autowired
     private StudentRepository repo;
 
@@ -20,6 +19,10 @@ public class StudentService {
 
     public List<Student> getAllStudents() {
         return repo.findAll();
+    }
+
+    public org.springframework.data.domain.Page<Student> getAllStudents(org.springframework.data.domain.Pageable pageable) {
+        return repo.findAll(pageable);
     }
 
     public Student saveStudent(Student student) {

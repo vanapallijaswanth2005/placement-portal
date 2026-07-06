@@ -78,9 +78,7 @@ public class AuthService {
         }
 
         // Send welcome email asynchronously
-        new Thread(() -> {
-            emailService.sendWelcomeEmail(user.getEmail(), user.getUsername(), user.getRole().name());
-        }).start();
+        emailService.sendWelcomeEmail(user.getEmail(), user.getUsername(), user.getRole().name());
 
         return "User Registered Successfully";
     }

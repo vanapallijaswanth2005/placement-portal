@@ -41,19 +41,24 @@ public class AdminController {
     }
 
     @GetMapping("/users")
-    public List<AdminUserResponse> getAllUsers() {
-        return userRepository.findAll().stream()
+    public org.springframework.data.domain.Page<AdminUserResponse> getAllUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        return userRepository.findAll(pageable)
                 .map(user -> new AdminUserResponse(
                         user.getId(),
                         user.getUsername(),
                         user.getEmail(),
-                        user.getRole()))
-                .toList();
+                        user.getRole()));
     }
 
     @GetMapping("/recruiters")
-    public List<AdminRecruiterResponse> getAllRecruiters() {
-        return recruiterService.getAllRecruitersForAdmin();
+    public org.springframework.data.domain.Page<AdminRecruiterResponse> getAllRecruiters(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        return recruiterService.getAllRecruitersForAdmin(pageable);
     }
 
     @PutMapping("/recruiters/{id}/approve")

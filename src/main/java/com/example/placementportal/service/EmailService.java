@@ -111,10 +111,35 @@ public class EmailService {
         }
     }
 
+    @org.springframework.scheduling.annotation.Async
+    public void sendPasswordResetEmail(String to, String username, String token) {
+        if (to == null || to.isEmpty()) {
+            log.warn("Cannot send password reset email, address is empty for user: {}", username);
+            return;
+        }
+
+        try {
+            Context context = new Context();
+            context.setVariable("username", username);
+            
+            // Generate the link back to the frontend with the token
+            String resetLink = "http://localhost:8080?resetToken=" + token;
+            context.setVariable("resetLink", resetLink);
+
+            String htmlBody = emailTemplateEngine.process("password-reset", context);
+
+            sendHtmlEmail(to, "CareerLink Password Reset Request", htmlBody);
+            log.info("Password reset email sent to {}", to);
+        } catch (Exception e) {
+            log.error("Failed to send password reset email to {}: {}", to, e.getMessage());
+        }
+    }
+
     private void sendHtmlEmail(String to, String subject, String htmlBody) throws MessagingException {
         MimeMessage mimeMessage = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
         helper.setTo(to);
+        helper.setReplyTo("noreply@careerlink.com");
         helper.setSubject(subject);
         helper.setText(htmlBody, true); // true = isHtml
         mailSender.send(mimeMessage);

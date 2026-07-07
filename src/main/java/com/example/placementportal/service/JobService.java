@@ -20,6 +20,7 @@ public class JobService {
         return repo.findAll();
     }
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Page<Job> getAllJobs(Pageable pageable) {
         return repo.findAll(pageable);
     }
@@ -84,6 +85,7 @@ public class JobService {
         repo.delete(job);
     }
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Page<Job> searchJobs(String title, String company, String location,
                                  String skills, Double minSalary, Double maxSalary,
                                  Pageable pageable) {

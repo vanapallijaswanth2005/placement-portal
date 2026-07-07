@@ -77,4 +77,14 @@ public class Job {
 
     public Recruiter getRecruiter() { return recruiter; }
     public void setRecruiter(Recruiter recruiter) { this.recruiter = recruiter; }
+
+    @Transient
+    public String getRecruiterWebsiteUrl() {
+        return (recruiter != null) ? recruiter.getWebsiteUrl() : null;
+    }
+
+    @Transient
+    public String getRecruiterAboutUs() {
+        return (recruiter != null) ? recruiter.getAboutUs() : null;
+    }
 }

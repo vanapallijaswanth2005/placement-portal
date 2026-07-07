@@ -23,4 +23,16 @@ public class AuthController {
     public String login(@RequestBody LoginRequest request) {
         return authService.login(request);
     }
+
+    @PostMapping("/forgot-password")
+    public String forgotPassword(@RequestParam String email) {
+        authService.requestPasswordReset(email);
+        return "If an account with that email exists, a reset link has been sent.";
+    }
+
+    @PostMapping("/reset-password")
+    public String resetPassword(@RequestParam String token, @RequestParam String newPassword) {
+        authService.resetPassword(token, newPassword);
+        return "Password successfully reset.";
+    }
 }

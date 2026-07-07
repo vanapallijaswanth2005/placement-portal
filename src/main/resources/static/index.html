@@ -49,7 +49,10 @@
                     <span>Login</span>
                     <div class="spinner hidden" id="login-spinner"></div>
                 </button>
-                <p class="auth-toggle">Don't have an account? <span id="toggle-to-register">Register here</span></p>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                    <p class="auth-toggle" style="margin:0; font-size:12px;">Don't have an account? <span id="toggle-to-register">Register here</span></p>
+                    <p class="auth-toggle" style="margin:0; font-size:12px;"><span id="toggle-to-forgot-password">Forgot Password?</span></p>
+                </div>
             </form>
 
             <!-- Register Form -->
@@ -81,6 +84,34 @@
                     <div class="spinner hidden" id="register-spinner"></div>
                 </button>
                 <p class="auth-toggle">Already have an account? <span id="toggle-to-login">Login here</span></p>
+            </form>
+
+            <!-- Forgot Password Form -->
+            <form id="forgot-password-form" class="auth-form hidden">
+                <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 1rem; text-align: center;">Enter your email to receive a password reset link.</p>
+                <div class="form-group">
+                    <label for="forgot-email">Email Address</label>
+                    <input type="email" id="forgot-email" placeholder="Enter your email" required>
+                </div>
+                <button type="submit" class="btn btn-primary" id="forgot-btn">
+                    <span>Send Reset Link</span>
+                    <div class="spinner hidden" id="forgot-spinner"></div>
+                </button>
+                <p class="auth-toggle">Remembered your password? <span id="toggle-forgot-to-login">Login here</span></p>
+            </form>
+
+            <!-- Reset Password Form -->
+            <form id="reset-password-form" class="auth-form hidden">
+                <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 1rem; text-align: center;">Please enter your new password.</p>
+                <div class="form-group">
+                    <label for="reset-password">New Password</label>
+                    <input type="password" id="reset-password" placeholder="Enter new password" required>
+                </div>
+                <button type="submit" class="btn btn-primary" id="reset-btn">
+                    <span>Reset Password</span>
+                    <div class="spinner hidden" id="reset-spinner"></div>
+                </button>
+                <p class="auth-toggle">Back to <span id="toggle-reset-to-login">Login</span></p>
             </form>
         </section>
 
@@ -214,6 +245,33 @@
             <!-- ================= RECRUITER DASHBOARD ================= -->
             <section id="recruiter-dashboard" class="dashboard-view hidden">
                 <div class="dashboard-grid">
+                    <!-- Company Profile Form -->
+                    <div class="glass-panel profile-card full-width">
+                        <h3>Company Profile</h3>
+                        <p class="card-desc">Build your brand to attract top students.</p>
+                        <form id="recruiter-profile-form">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="rec-company-name">Company Name</label>
+                                    <input type="text" id="rec-company-name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="rec-designation">Your Designation</label>
+                                    <input type="text" id="rec-designation" placeholder="e.g. HR Manager">
+                                </div>
+                                <div class="form-group form-group-span-2">
+                                    <label for="rec-website">Company Website URL</label>
+                                    <input type="url" id="rec-website" placeholder="https://www.example.com">
+                                </div>
+                                <div class="form-group form-group-span-2">
+                                    <label for="rec-about">About Us</label>
+                                    <textarea id="rec-about" rows="3" placeholder="Tell students about your company culture and mission..."></textarea>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">Save Profile</button>
+                        </form>
+                    </div>
+
                     <!-- Post / Edit Job -->
                     <div class="glass-panel job-form-card full-width">
                         <h3 id="job-form-title">Post a New Job</h3>
@@ -431,6 +489,27 @@
                                 </tbody>
                             </table>
                             <div id="admin-jobs-pagination" class="pagination-controls"></div>
+                        </div>
+                    </div>
+
+                    <!-- Applications Directory -->
+                    <div class="glass-panel full-width">
+                        <h3>All Applications</h3>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Student</th>
+                                        <th>Job</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-apps-list">
+                                    <!-- Admin apps list -->
+                                </tbody>
+                            </table>
+                            <div id="admin-apps-pagination" class="pagination-controls"></div>
                         </div>
                     </div>
                 </div>

@@ -23,13 +23,13 @@ public class RecruiterService {
     private UserRepository userRepo;
 
     public Recruiter getRecruiterByUsername(String username) {
-        User user = userRepo.findByUsername(username)
+        User user = userRepo.findFirstByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
         return recruiterRepo.findByUserId(user.getId()).orElse(null);
     }
 
     public Recruiter saveOrUpdateRecruiterForUser(String username, Recruiter recruiter) {
-        User user = userRepo.findByUsername(username)
+        User user = userRepo.findFirstByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
         Recruiter existing = recruiterRepo.findByUserId(user.getId()).orElse(null);
@@ -42,6 +42,9 @@ public class RecruiterService {
         existing.setDesignation(recruiter.getDesignation());
         existing.setEmail(recruiter.getEmail());
         existing.setPhone(recruiter.getPhone());
+        existing.setWebsiteUrl(recruiter.getWebsiteUrl());
+        existing.setAboutUs(recruiter.getAboutUs());
+        existing.setLogoUrl(recruiter.getLogoUrl());
         return recruiterRepo.save(existing);
     }
 

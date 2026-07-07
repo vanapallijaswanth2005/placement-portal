@@ -34,7 +34,7 @@ public class StudentService {
     }
 
     public Student getStudentByUsername(String username) {
-        User user = userRepo.findByUsername(username)
+        User user = userRepo.findFirstByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
         Student student = repo.findByUserId(user.getId()).orElse(null);
@@ -60,7 +60,7 @@ public class StudentService {
     }
 
     public Student saveOrUpdateStudentForUser(String username, Student student) {
-        User user = userRepo.findByUsername(username)
+        User user = userRepo.findFirstByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
         Student existing = repo.findByUserId(user.getId()).orElse(null);

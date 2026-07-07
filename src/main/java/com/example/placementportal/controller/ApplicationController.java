@@ -44,6 +44,7 @@ public class ApplicationController {
     // 🎓 STUDENT: Apply for job
     @PreAuthorize("hasRole('STUDENT')")
     @PostMapping
+    @org.springframework.transaction.annotation.Transactional
     public JobApplication applyJob(@RequestParam Long jobId) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Student student = studentService.getStudentByUsername(username);
@@ -135,6 +136,7 @@ public class ApplicationController {
     // 📋 RECRUITER: Update application status
     @PreAuthorize("hasRole('RECRUITER')")
     @PutMapping("/{id}/status")
+    @org.springframework.transaction.annotation.Transactional
     public JobApplication updateStatus(
             @PathVariable Long id,
             @RequestParam ApplicationStatus status) {

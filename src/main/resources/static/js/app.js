@@ -27,8 +27,13 @@ const el = {
     appSection: document.getElementById('app-section'),
     loginForm: document.getElementById('login-form'),
     registerForm: document.getElementById('register-form'),
+    forgotPasswordForm: document.getElementById('forgot-password-form'),
+    resetPasswordForm: document.getElementById('reset-password-form'),
     toggleToRegister: document.getElementById('toggle-to-register'),
     toggleToLogin: document.getElementById('toggle-to-login'),
+    toggleToForgotPassword: document.getElementById('toggle-to-forgot-password'),
+    toggleForgotToLogin: document.getElementById('toggle-forgot-to-login'),
+    toggleResetToLogin: document.getElementById('toggle-reset-to-login'),
     navUserInfo: document.getElementById('nav-user-info'),
     logoutBtn: document.getElementById('logout-btn'),
     toast: document.getElementById('toast'),
@@ -81,6 +86,13 @@ const el = {
     cancelEditBtn: document.getElementById('cancel-edit-btn'),
     recruiterJobsList: document.getElementById('recruiter-jobs-list'),
     recruiterAppsList: document.getElementById('recruiter-applications-list'),
+
+    // Recruiter Profile
+    recruiterProfileForm: document.getElementById('recruiter-profile-form'),
+    recCompany: document.getElementById('rec-company-name'),
+    recDesignation: document.getElementById('rec-designation'),
+    recWebsite: document.getElementById('rec-website'),
+    recAbout: document.getElementById('rec-about'),
     
     // Admin Stats & Lists
     statStudents: document.getElementById('stat-students'),
@@ -91,7 +103,8 @@ const el = {
     adminRecruitersList: document.getElementById('admin-recruiters-list'),
     adminUsersList: document.getElementById('admin-users-list'),
     adminStudentsList: document.getElementById('admin-students-list'),
-    adminJobsList: document.getElementById('admin-jobs-list')
+    adminJobsList: document.getElementById('admin-jobs-list'),
+    adminAppsList: document.getElementById('admin-apps-list')
 };
 
 // JWT Decoder
@@ -204,6 +217,21 @@ async function apiFetch(url, options = {}) {
 function init() {
     setupEventListeners();
     
+    // Check for password reset token
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('resetToken')) {
+        state.resetToken = urlParams.get('resetToken');
+        el.authSection.classList.remove('hidden');
+        el.appSection.classList.add('hidden');
+        el.loginForm.classList.add('hidden');
+        el.registerForm.classList.add('hidden');
+        el.forgotPasswordForm.classList.add('hidden');
+        el.resetPasswordForm.classList.remove('hidden');
+        document.getElementById('auth-subtitle').textContent = 'Set your new password';
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return;
+    }
+
     if (state.token) {
         const claims = parseJwt(state.token);
         if (claims && claims.sub && claims.role) {
@@ -225,12 +253,36 @@ function setupEventListeners() {
     // Auth Toggles
     el.toggleToRegister.addEventListener('click', () => {
         el.loginForm.classList.add('hidden');
+        el.forgotPasswordForm.classList.add('hidden');
+        el.resetPasswordForm.classList.add('hidden');
         el.registerForm.classList.remove('hidden');
         document.getElementById('auth-subtitle').textContent = 'Create a new account to join CareerLink';
     });
     
     el.toggleToLogin.addEventListener('click', () => {
         el.registerForm.classList.add('hidden');
+        el.forgotPasswordForm.classList.add('hidden');
+        el.resetPasswordForm.classList.add('hidden');
+        el.loginForm.classList.remove('hidden');
+        document.getElementById('auth-subtitle').textContent = 'Welcome back! Please login to your account';
+    });
+
+    el.toggleToForgotPassword.addEventListener('click', () => {
+        el.loginForm.classList.add('hidden');
+        el.registerForm.classList.add('hidden');
+        el.resetPasswordForm.classList.add('hidden');
+        el.forgotPasswordForm.classList.remove('hidden');
+        document.getElementById('auth-subtitle').textContent = 'Recover your account';
+    });
+
+    el.toggleForgotToLogin.addEventListener('click', () => {
+        el.forgotPasswordForm.classList.add('hidden');
+        el.loginForm.classList.remove('hidden');
+        document.getElementById('auth-subtitle').textContent = 'Welcome back! Please login to your account';
+    });
+
+    el.toggleResetToLogin.addEventListener('click', () => {
+        el.resetPasswordForm.classList.add('hidden');
         el.loginForm.classList.remove('hidden');
         document.getElementById('auth-subtitle').textContent = 'Welcome back! Please login to your account';
     });
@@ -238,6 +290,8 @@ function setupEventListeners() {
     // Auth Forms Submission
     el.loginForm.addEventListener('submit', handleLogin);
     el.registerForm.addEventListener('submit', handleRegister);
+    el.forgotPasswordForm.addEventListener('submit', handleForgotPassword);
+    el.resetPasswordForm.addEventListener('submit', handleResetPassword);
     el.logoutBtn.addEventListener('click', logout);
     
     // Student Forms Submission
@@ -246,6 +300,7 @@ function setupEventListeners() {
     el.searchResetBtn.addEventListener('click', resetJobSearch);
     
     // Recruiter Forms Submission
+    if (el.recruiterProfileForm) el.recruiterProfileForm.addEventListener('submit', handleRecruiterProfileSave);
     el.jobForm.addEventListener('submit', handleJobSubmit);
     el.cancelEditBtn.addEventListener('click', resetJobForm);
     
@@ -304,6 +359,64 @@ function showDashboard() {
         {opacity: 0, y: 30}, 
         {opacity: 1, y: 0, duration: 0.6, ease: "power2.out"}
     );
+}
+
+async function handleForgotPassword(e) {
+    e.preventDefault();
+    const btn = document.getElementById('forgot-btn');
+    const spinner = document.getElementById('forgot-spinner');
+    
+    try {
+        btn.disabled = true;
+        spinner.classList.remove('hidden');
+        btn.querySelector('span').classList.add('hidden');
+        
+        const email = document.getElementById('forgot-email').value;
+        const res = await apiFetch(`/auth/forgot-password?email=${encodeURIComponent(email)}`, {
+            method: 'POST'
+        });
+        
+        showToast(res || 'If an account with that email exists, a reset link has been sent.', 'success');
+        document.getElementById('forgot-email').value = '';
+    } catch (err) {
+        showToast('Error requesting password reset', 'error');
+    } finally {
+        btn.disabled = false;
+        spinner.classList.add('hidden');
+        btn.querySelector('span').classList.remove('hidden');
+    }
+}
+
+async function handleResetPassword(e) {
+    e.preventDefault();
+    const btn = document.getElementById('reset-btn');
+    const spinner = document.getElementById('reset-spinner');
+    
+    try {
+        btn.disabled = true;
+        spinner.classList.remove('hidden');
+        btn.querySelector('span').classList.add('hidden');
+        
+        const newPassword = document.getElementById('reset-password').value;
+        const res = await apiFetch(`/auth/reset-password?token=${encodeURIComponent(state.resetToken)}&newPassword=${encodeURIComponent(newPassword)}`, {
+            method: 'POST'
+        });
+        
+        showToast(res || 'Password successfully reset', 'success');
+        
+        // Go back to login
+        el.resetPasswordForm.classList.add('hidden');
+        el.loginForm.classList.remove('hidden');
+        document.getElementById('auth-subtitle').textContent = 'Welcome back! Please login to your account';
+        document.getElementById('reset-password').value = '';
+        state.resetToken = null;
+    } catch (err) {
+        showToast(err.message || 'Error resetting password', 'error');
+    } finally {
+        btn.disabled = false;
+        spinner.classList.add('hidden');
+        btn.querySelector('span').classList.remove('hidden');
+    }
 }
 
 // Logout
@@ -553,6 +666,8 @@ function renderStudentJobs() {
                 ${job.experience ? `<p class="card-desc"><strong>Experience:</strong> ${escapeHtml(job.experience)}</p>` : ''}
                 ${job.lastDate ? `<p class="card-desc"><strong>Deadline:</strong> ${formatDate(job.lastDate)}</p>` : ''}
                 ${job.eligibilityCriteria ? `<p class="card-desc"><strong>Eligibility:</strong> ${escapeHtml(job.eligibilityCriteria)}</p>` : ''}
+                ${job.recruiterWebsiteUrl ? `<p class="card-desc"><strong>Website:</strong> <a href="${escapeHtml(job.recruiterWebsiteUrl)}" target="_blank" style="color: var(--primary);">${escapeHtml(job.recruiterWebsiteUrl)}</a></p>` : ''}
+                ${job.recruiterAboutUs ? `<p class="card-desc" style="margin-top: 0.5rem; font-size: 0.85rem; border-left: 2px solid var(--primary); padding-left: 0.5rem;"><em>${escapeHtml(job.recruiterAboutUs)}</em></p>` : ''}
             </div>
             <div class="job-salary-badge">${formatSalary(job.salary)}/yr</div>
             ${actionBtnHtml}
@@ -600,6 +715,8 @@ function renderStudentApplications() {
 // RECRUITER ACTIONS & RENDERING
 // ==========================================================================
 
+
+
 async function loadRecruiterDashboard() {
     try {
         const jobsPage = await apiFetch(`/jobs/my?page=${state.pages.recruiterJobs}&size=10`);
@@ -608,7 +725,7 @@ async function loadRecruiterDashboard() {
         const appsPage = await apiFetch(`/apply/recruiter/my?page=${state.pages.recruiterApps}&size=10`);
         state.applications = appsPage?.content || [];
 
-        updateRecruiterApprovalNotice();
+        await fetchAndPopulateRecruiterProfile();
         renderRecruiterJobs();
         renderRecruiterApplications();
         
@@ -619,22 +736,51 @@ async function loadRecruiterDashboard() {
     }
 }
 
-async function updateRecruiterApprovalNotice() {
-    if (!el.recruiterApprovalNotice) return;
-
+async function fetchAndPopulateRecruiterProfile() {
     try {
         const profile = await apiFetch('/recruiters/me');
-        if (profile && !profile.approved) {
-            el.recruiterApprovalNotice.textContent = 'Your account is pending admin approval. You cannot post jobs until approved.';
-            el.recruiterApprovalNotice.classList.remove('hidden');
-            el.jobSubmitBtn.disabled = true;
-        } else {
-            el.recruiterApprovalNotice.classList.add('hidden');
-            el.jobSubmitBtn.disabled = false;
+        if (profile) {
+            // Check approval status
+            if (!profile.approved) {
+                if (el.recruiterApprovalNotice) {
+                    el.recruiterApprovalNotice.textContent = 'Your account is pending admin approval. You cannot post jobs until approved.';
+                    el.recruiterApprovalNotice.classList.remove('hidden');
+                }
+                if (el.jobSubmitBtn) el.jobSubmitBtn.disabled = true;
+            } else {
+                if (el.recruiterApprovalNotice) el.recruiterApprovalNotice.classList.add('hidden');
+                if (el.jobSubmitBtn) el.jobSubmitBtn.disabled = false;
+            }
+
+            // Populate form
+            if (el.recCompany) el.recCompany.value = profile.companyName || '';
+            if (el.recDesignation) el.recDesignation.value = profile.designation || '';
+            if (el.recWebsite) el.recWebsite.value = profile.websiteUrl || '';
+            if (el.recAbout) el.recAbout.value = profile.aboutUs || '';
         }
     } catch (err) {
-        el.recruiterApprovalNotice.classList.add('hidden');
-        el.jobSubmitBtn.disabled = false;
+        if (el.recruiterApprovalNotice) el.recruiterApprovalNotice.classList.add('hidden');
+        if (el.jobSubmitBtn) el.jobSubmitBtn.disabled = false;
+    }
+}
+
+async function handleRecruiterProfileSave(e) {
+    e.preventDefault();
+    const data = {
+        companyName: el.recCompany.value.trim(),
+        designation: el.recDesignation.value.trim(),
+        websiteUrl: el.recWebsite.value.trim(),
+        aboutUs: el.recAbout.value.trim()
+    };
+
+    try {
+        await apiFetch('/recruiters/me', {
+            method: 'PUT',
+            body: data
+        });
+        showToast('Company Profile updated successfully!', 'success');
+    } catch (err) {
+        showToast(err.message || 'Failed to update profile', 'error');
     }
 }
 
@@ -852,11 +998,13 @@ async function loadAdminDashboard() {
         renderAdminUsers();
         renderAdminStudents();
         renderAdminJobs();
+        renderAdminApplications();
         
         renderPaginationControls('admin-users-pagination', usersPage, (p) => { state.pages.adminUsers = p; loadAdminDashboard(); });
         renderPaginationControls('admin-recruiters-pagination', recruitersPage, (p) => { state.pages.adminRecruiters = p; loadAdminDashboard(); });
         renderPaginationControls('admin-students-pagination', studentsPage, (p) => { state.pages.adminStudents = p; loadAdminDashboard(); });
         renderPaginationControls('admin-jobs-pagination', jobsPage, (p) => { state.pages.adminJobs = p; loadAdminDashboard(); });
+        renderPaginationControls('admin-apps-pagination', appsPage, (p) => { state.pages.adminApps = p; loadAdminDashboard(); });
     } catch (err) {
         showToast('Error loading admin dashboard', 'error');
     }
@@ -986,10 +1134,35 @@ function renderAdminJobs() {
             <td>${escapeHtml(job.company)}</td>
             <td>${formatSalary(job.salary)}</td>
             <td>
-                <button class="btn btn-danger btn-sm" onclick="adminDeleteJob(${job.id})">Delete Job</button>
+                <button class="btn btn-primary btn-sm" onclick="exportCsv(${job.id})">Export CSV</button>
+                <button class="btn btn-danger btn-sm" onclick="adminDeleteJob(${job.id})">Delete</button>
             </td>
         `;
         el.adminJobsList.appendChild(tr);
+    });
+}
+
+function renderAdminApplications() {
+    el.adminAppsList.innerHTML = '';
+    
+    if (state.applications.length === 0) {
+        el.adminAppsList.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">No applications found.</td></tr>';
+        return;
+    }
+    
+    state.applications.forEach(app => {
+        const studentName = app.student ? app.student.name : 'Unknown';
+        const jobTitle = app.job ? app.job.title : 'Unknown';
+        const statusClass = getStatusClass(app.status);
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${app.id}</td>
+            <td><strong>${escapeHtml(studentName)}</strong></td>
+            <td>${escapeHtml(jobTitle)}</td>
+            <td><span class="badge ${statusClass}">${app.status}</span></td>
+        `;
+        el.adminAppsList.appendChild(tr);
     });
 }
 

@@ -9,6 +9,7 @@ import com.example.placementportal.entity.User;
 import com.example.placementportal.repository.RecruiterRepository;
 import com.example.placementportal.repository.StudentRepository;
 import com.example.placementportal.repository.UserRepository;
+import com.example.placementportal.entity.PasswordResetToken;
 import com.example.placementportal.security.JwtUtil;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +39,10 @@ public class AuthService {
     @Autowired
     private JwtUtil jwtUtil;
 
+    @Autowired
+    private com.example.placementportal.repository.PasswordResetTokenRepository passwordResetTokenRepository;
+
+    @org.springframework.transaction.annotation.Transactional
     public String register(RegisterRequest request) {
         if (request.getRole() == Role.ADMIN) {
             throw new ResponseStatusException(
@@ -74,6 +79,7 @@ public class AuthService {
             student.setUser(savedUser);
             student.setName(savedUser.getUsername());
             student.setEmail(savedUser.getEmail());
+            student.setSkills("Not specified");
             studentRepository.save(student);
         }
 
@@ -86,7 +92,7 @@ public class AuthService {
     public String login(LoginRequest request) {
 
         User user = userRepository
-                .findByUsername(request.getUsername())
+                .findFirstByUsername(request.getUsername())
                 .orElseThrow(() ->
                         new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password"));
 
@@ -101,5 +107,42 @@ public class AuthService {
         }
 
         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password");
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void requestPasswordReset(String email) {
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            // Do not throw an error to prevent email enumeration attacks
+            return;
+        }
+
+        // Delete any existing tokens for this user
+        passwordResetTokenRepository.deleteByUser(user);
+
+        // Generate new token
+        String token = java.util.UUID.randomUUID().toString();
+        PasswordResetToken resetToken = new PasswordResetToken(token, user);
+        passwordResetTokenRepository.save(resetToken);
+
+        // Send email
+        emailService.sendPasswordResetEmail(user.getEmail(), user.getUsername(), token);
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void resetPassword(String token, String newPassword) {
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid token"));
+
+        if (resetToken.isExpired() || resetToken.isUsed()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token has expired or already been used");
+        }
+
+        User user = resetToken.getUser();
+        user.setPassword(encoder.encode(newPassword));
+        userRepository.save(user);
+
+        resetToken.setUsed(true);
+        passwordResetTokenRepository.save(resetToken);
     }
 }

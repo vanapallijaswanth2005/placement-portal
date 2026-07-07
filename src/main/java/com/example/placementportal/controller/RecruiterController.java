@@ -21,19 +21,19 @@ public class RecruiterController {
 
     @PreAuthorize("hasRole('RECRUITER')")
     @GetMapping("/me")
-    public RecruiterProfileResponse getMyProfile() {
+    public com.example.placementportal.entity.Recruiter getMyProfile() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Recruiter recruiter = recruiterService.getRecruiterByUsername(username);
         if (recruiter == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Recruiter profile not found");
         }
+        return recruiter;
+    }
 
-        return new RecruiterProfileResponse(
-                recruiter.getId(),
-                recruiter.getRecruiterName(),
-                recruiter.getCompanyName(),
-                recruiter.getEmail(),
-                recruiter.isApproved()
-        );
+    @PreAuthorize("hasRole('RECRUITER')")
+    @org.springframework.web.bind.annotation.PutMapping("/me")
+    public com.example.placementportal.entity.Recruiter updateMyProfile(@org.springframework.web.bind.annotation.RequestBody Recruiter recruiterUpdates) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return recruiterService.saveOrUpdateRecruiterForUser(username, recruiterUpdates);
     }
 }

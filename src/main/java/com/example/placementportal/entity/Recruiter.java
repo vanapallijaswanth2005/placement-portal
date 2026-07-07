@@ -21,6 +21,13 @@ public class Recruiter {
     private String email;
     private String phone;
 
+    private String websiteUrl;
+
+    @Column(columnDefinition = "TEXT")
+    private String aboutUs;
+
+    private String logoUrl;
+
     private boolean approved = false;
 
     @OneToOne(fetch = FetchType.LAZY)
@@ -53,4 +60,13 @@ public class Recruiter {
 
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
+
+    public String getWebsiteUrl() { return websiteUrl; }
+    public void setWebsiteUrl(String websiteUrl) { this.websiteUrl = websiteUrl; }
+
+    public String getAboutUs() { return aboutUs; }
+    public void setAboutUs(String aboutUs) { this.aboutUs = aboutUs; }
+
+    public String getLogoUrl() { return logoUrl; }
+    public void setLogoUrl(String logoUrl) { this.logoUrl = logoUrl; }
 }

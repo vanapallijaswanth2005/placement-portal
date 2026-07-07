@@ -87,9 +87,14 @@ public class JobApplicationService {
         return getByJobId(jobId);
     }
 
-    public JobApplication updateStatusForRecruiter(Long id, ApplicationStatus status, Long recruiterId) {
+    public JobApplication updateStatusForRecruiter(Long id, ApplicationStatus status, Long recruiterId, java.time.LocalDateTime interviewDate) {
         JobApplication app = getByIdForRecruiter(id, recruiterId);
         app.setStatus(status);
+        if (status == ApplicationStatus.INTERVIEW) {
+            app.setInterviewDate(interviewDate);
+        } else {
+            app.setInterviewDate(null); // Clear it if status is not interview
+        }
         return repo.save(app);
     }
 }

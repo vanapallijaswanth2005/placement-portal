@@ -37,6 +37,10 @@ const el = {
     navUserInfo: document.getElementById('nav-user-info'),
     logoutBtn: document.getElementById('logout-btn'),
     toast: document.getElementById('toast'),
+    notificationBell: document.getElementById('notification-bell'),
+    notificationBadge: document.getElementById('notification-badge'),
+    notificationDropdown: document.getElementById('notification-dropdown'),
+    notificationList: document.getElementById('notification-list'),
     
     // Dashboards
     studentDash: document.getElementById('student-dashboard'),
@@ -213,6 +217,88 @@ async function apiFetch(url, options = {}) {
     }
 }
 
+// Notifications
+let notificationEventSource = null;
+
+function setupNotifications() {
+    if (notificationEventSource) {
+        notificationEventSource.close();
+    }
+    
+    // Fetch initial notifications
+    apiFetch('/api/notifications').then(notifications => {
+        renderNotifications(notifications);
+    }).catch(console.error);
+
+    // Setup SSE connection
+    if (state.token) {
+        notificationEventSource = new EventSource(`/api/notifications/stream?token=${state.token}`);
+        
+        notificationEventSource.addEventListener('notification', (event) => {
+            const notification = JSON.parse(event.data);
+            showToast(notification.message, 'info');
+            
+            // Refresh list
+            apiFetch('/api/notifications').then(notifications => {
+                renderNotifications(notifications);
+            }).catch(console.error);
+        });
+        
+        notificationEventSource.onerror = () => {
+            console.error('SSE Error, reconnecting...');
+            notificationEventSource.close();
+            setTimeout(setupNotifications, 5000); // Reconnect after 5 seconds
+        };
+    }
+}
+
+function renderNotifications(notifications) {
+    el.notificationList.innerHTML = '';
+    
+    if (!notifications || notifications.length === 0) {
+        el.notificationList.innerHTML = '<div style="padding: 15px; text-align: center; color: var(--text-secondary);">No notifications</div>';
+        el.notificationBadge.style.display = 'none';
+        return;
+    }
+    
+    const unreadCount = notifications.filter(n => !n.read).length;
+    
+    if (unreadCount > 0) {
+        el.notificationBadge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+        el.notificationBadge.style.display = 'block';
+    } else {
+        el.notificationBadge.style.display = 'none';
+    }
+    
+    notifications.slice(0, 10).forEach(notif => {
+        const item = document.createElement('div');
+        item.style.padding = '10px 15px';
+        item.style.borderBottom = '1px solid var(--border)';
+        item.style.backgroundColor = notif.read ? 'transparent' : 'rgba(59, 130, 246, 0.1)';
+        item.style.cursor = 'pointer';
+        
+        const date = new Date(notif.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        
+        item.innerHTML = `
+            <div style="font-size: 0.9rem;">${escapeHtml(notif.message)}</div>
+            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 5px;">${date}</div>
+        `;
+        
+        if (!notif.read) {
+            item.addEventListener('click', () => {
+                apiFetch(`/api/notifications/${notif.id}/read`, { method: 'PUT' }).then(() => {
+                    item.style.backgroundColor = 'transparent';
+                    // Re-render
+                    apiFetch('/api/notifications').then(renderNotifications);
+                }).catch(console.error);
+            });
+        }
+        
+        el.notificationList.appendChild(item);
+    });
+}
+
+
 // Init Application
 function init() {
     setupEventListeners();
@@ -304,6 +390,19 @@ function setupEventListeners() {
     el.jobForm.addEventListener('submit', handleJobSubmit);
     el.cancelEditBtn.addEventListener('click', resetJobForm);
     
+    // Notifications
+    if (el.notificationBell) {
+        el.notificationBell.addEventListener('click', (e) => {
+            e.stopPropagation();
+            el.notificationDropdown.classList.toggle('hidden');
+        });
+        document.addEventListener('click', (e) => {
+            if (!el.notificationDropdown.contains(e.target) && e.target !== el.notificationBell) {
+                el.notificationDropdown.classList.add('hidden');
+            }
+        });
+    }
+    
     // Theme Toggle
     document.getElementById('theme-toggle').addEventListener('click', () => {
         document.body.classList.toggle('light-mode');
@@ -346,6 +445,7 @@ function showDashboard() {
     if (state.user.role === 'STUDENT') {
         el.studentDash.classList.remove('hidden');
         loadStudentDashboard();
+        setupNotifications();
     } else if (state.user.role === 'RECRUITER') {
         el.recruiterDash.classList.remove('hidden');
         loadRecruiterDashboard();
@@ -927,7 +1027,23 @@ async function deleteJob(id) {
 
 async function updateApplicationStatus(appId, newStatus) {
     try {
-        await apiFetch(`/apply/${appId}/status?status=${newStatus}`, {
+        let url = `/apply/${appId}/status?status=${newStatus}`;
+        
+        if (newStatus === 'INTERVIEW') {
+            // Ask for interview date
+            const dateStr = prompt("Enter interview date and time (e.g. 2026-07-15T10:00):\nFormat: YYYY-MM-DDTHH:mm");
+            if (dateStr) {
+                try {
+                    // Try to parse just to validate format
+                    new Date(dateStr).toISOString();
+                    url += `&interviewDate=${encodeURIComponent(dateStr)}`;
+                } catch (e) {
+                    showToast('Invalid date format. Using default template.', 'warning');
+                }
+            }
+        }
+        
+        await apiFetch(url, {
             method: 'PUT'
         });
         showToast(`Application status updated to ${newStatus}!`, 'success');

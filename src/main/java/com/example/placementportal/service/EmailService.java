@@ -11,8 +11,9 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 @Service
-@Slf4j
 public class EmailService {
+
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(EmailService.class);
 
     private final JavaMailSender mailSender;
     private final TemplateEngine emailTemplateEngine;
@@ -45,7 +46,7 @@ public class EmailService {
     }
 
     @org.springframework.scheduling.annotation.Async
-    public void sendApplicationStatusUpdate(String to, String studentName, String jobTitle, String company, String newStatus) {
+    public void sendApplicationStatusUpdate(String to, String studentName, String jobTitle, String company, String newStatus, java.time.LocalDateTime interviewDate) {
         if (to == null || to.isEmpty()) {
             log.warn("Cannot send status update email, address is empty for student: {}", studentName);
             return;
@@ -60,14 +61,59 @@ public class EmailService {
 
             // Set status-specific colors and message
             setStatusStyling(context, newStatus);
+            
+            if (interviewDate != null && newStatus.equalsIgnoreCase("INTERVIEW")) {
+                java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy h:mm a");
+                context.setVariable("statusMessage", "Congratulations! You've been shortlisted for an interview scheduled on " + interviewDate.format(formatter) + ". A calendar invite is attached.");
+            }
 
             String htmlBody = emailTemplateEngine.process("status-update", context);
 
-            sendHtmlEmail(to, "Application Status Update: " + jobTitle + " at " + company, htmlBody);
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+            helper.setTo(to);
+            helper.setReplyTo("noreply@careerlink.com");
+            helper.setSubject("Application Status Update: " + jobTitle + " at " + company);
+            helper.setText(htmlBody, true); // true = isHtml
+            
+            if (interviewDate != null && newStatus.equalsIgnoreCase("INTERVIEW")) {
+                String icsContent = generateIcsContent(interviewDate, company, jobTitle);
+                helper.addAttachment("interview.ics", new org.springframework.core.io.ByteArrayResource(icsContent.getBytes("UTF-8")));
+            }
+            
+            mailSender.send(mimeMessage);
             log.info("Application status update email sent to {}", to);
         } catch (Exception e) {
             log.error("Failed to send application status update to {}: {}", to, e.getMessage());
         }
+    }
+    
+    private String generateIcsContent(java.time.LocalDateTime interviewDate, String company, String jobTitle) {
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");
+        String start = interviewDate.format(formatter);
+        String end = interviewDate.plusHours(1).format(formatter);
+        
+        return "BEGIN:VCALENDAR\n" +
+               "VERSION:2.0\n" +
+               "PRODID:-//CareerLink//Placement Portal//EN\n" +
+               "CALSCALE:GREGORIAN\n" +
+               "METHOD:REQUEST\n" +
+               "BEGIN:VEVENT\n" +
+               "UID:" + java.util.UUID.randomUUID().toString() + "\n" +
+               "DTSTAMP:" + java.time.LocalDateTime.now().format(formatter) + "Z\n" +
+               "DTSTART:" + start + "\n" +
+               "DTEND:" + end + "\n" +
+               "SUMMARY:Interview with " + company + " for " + jobTitle + "\n" +
+               "DESCRIPTION:Congratulations on your interview selection! Please join on time.\n" +
+               "STATUS:CONFIRMED\n" +
+               "SEQUENCE:0\n" +
+               "BEGIN:VALARM\n" +
+               "TRIGGER:-PT15M\n" +
+               "DESCRIPTION:Reminder\n" +
+               "ACTION:DISPLAY\n" +
+               "END:VALARM\n" +
+               "END:VEVENT\n" +
+               "END:VCALENDAR";
     }
 
     private void setStatusStyling(Context context, String status) {

@@ -4,6 +4,8 @@ import com.example.placementportal.entity.Job;
 import com.example.placementportal.entity.Recruiter;
 import com.example.placementportal.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -16,10 +18,12 @@ public class JobService {
     @Autowired
     private JobRepository repo;
 
+    @Cacheable("jobs")
     public List<Job> getAllJobs() {
         return repo.findAll();
     }
 
+    @Cacheable("jobs")
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Page<Job> getAllJobs(Pageable pageable) {
         return repo.findAll(pageable);
@@ -38,11 +42,13 @@ public class JobService {
         return repo.findByRecruiterId(recruiterId, pageable);
     }
 
+    @CacheEvict(value = "jobs", allEntries = true)
     public Job saveJob(Job job, Recruiter recruiter) {
         job.setRecruiter(recruiter);
         return repo.save(job);
     }
 
+    @CacheEvict(value = "jobs", allEntries = true)
     public Job updateJob(Long id, Job updatedJob, Recruiter recruiter) {
         Job existingJob = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Job not found with id: " + id));
@@ -66,6 +72,7 @@ public class JobService {
         return repo.save(existingJob);
     }
 
+    @CacheEvict(value = "jobs", allEntries = true)
     public void deleteJob(Long id, Recruiter recruiter) {
         Job job = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Job not found with id: " + id));
@@ -79,12 +86,14 @@ public class JobService {
     }
 
     // Admin can delete any job
+    @CacheEvict(value = "jobs", allEntries = true)
     public void deleteJobAdmin(Long id) {
         Job job = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Job not found with id: " + id));
         repo.delete(job);
     }
 
+    @Cacheable("jobs")
     @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Page<Job> searchJobs(String title, String company, String location,
                                  String skills, Double minSalary, Double maxSalary,

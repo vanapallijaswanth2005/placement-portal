@@ -129,6 +129,22 @@
                             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                         </svg>
                     </button>
+                    <div class="notification-container" style="position: relative; display: inline-block; margin-right: 15px;">
+                        <button id="notification-bell" class="btn btn-icon" title="Notifications">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                            </svg>
+                            <span id="notification-badge" class="badge" style="position: absolute; top: -5px; right: -5px; background: var(--danger); font-size: 10px; display: none;">0</span>
+                        </button>
+                        <div id="notification-dropdown" class="glass-panel hidden" style="position: absolute; top: 40px; right: 0; width: 300px; max-height: 400px; overflow-y: auto; z-index: 1000; padding: 0; border: 1px solid var(--border);">
+                            <div style="padding: 10px; border-bottom: 1px solid var(--border); font-weight: bold;">Notifications</div>
+                            <div id="notification-list" style="display: flex; flex-direction: column;">
+                                <div style="padding: 15px; text-align: center; color: var(--text-secondary);">No notifications</div>
+                            </div>
+                        </div>
+                    </div>
                     <span id="nav-user-info" class="user-badge">Username (Role)</span>
                     <button id="logout-btn" class="btn btn-secondary btn-sm">Logout</button>
                 </div>

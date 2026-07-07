@@ -23,23 +23,29 @@ import java.util.List;
 @RequestMapping("/apply")
 public class ApplicationController {
 
-    @Autowired
-    private JobApplicationService service;
-
-    @Autowired
-    private StudentService studentService;
-
-    @Autowired
-    private EmailService emailService;
+    private final JobApplicationService service;
+    private final StudentService studentService;
+    private final RecruiterService recruiterService;
+    private final EmailService emailService;
+    private final com.example.placementportal.service.SseNotificationService sseNotificationService;
+    private final com.example.placementportal.service.CsvExportService csvExportService;
 
     @Autowired
     private JobService jobService;
 
-    @Autowired
-    private RecruiterService recruiterService;
-
-    @Autowired
-    private com.example.placementportal.service.CsvExportService csvExportService;
+    public ApplicationController(JobApplicationService service, 
+                                 StudentService studentService,
+                                 RecruiterService recruiterService,
+                                 EmailService emailService,
+                                 com.example.placementportal.service.SseNotificationService sseNotificationService,
+                                 com.example.placementportal.service.CsvExportService csvExportService) {
+        this.service = service;
+        this.studentService = studentService;
+        this.recruiterService = recruiterService;
+        this.emailService = emailService;
+        this.sseNotificationService = sseNotificationService;
+        this.csvExportService = csvExportService;
+    }
 
     // 🎓 STUDENT: Apply for job
     @PreAuthorize("hasRole('STUDENT')")
@@ -80,7 +86,8 @@ public class ApplicationController {
                     "Recruiter",
                     jobTitle,
                     jobCompany,
-                    "New application from " + studentName
+                    "New application from " + studentName,
+                    null
                 );
             }
         } catch (Exception e) {
@@ -139,10 +146,11 @@ public class ApplicationController {
     @org.springframework.transaction.annotation.Transactional
     public JobApplication updateStatus(
             @PathVariable Long id,
-            @RequestParam ApplicationStatus status) {
+            @RequestParam ApplicationStatus status,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE_TIME) java.time.LocalDateTime interviewDate) {
 
         Recruiter recruiter = getCurrentRecruiter();
-        JobApplication updatedApp = service.updateStatusForRecruiter(id, status, recruiter.getId());
+        JobApplication updatedApp = service.updateStatusForRecruiter(id, status, recruiter.getId(), interviewDate);
         Student student = updatedApp.getStudent();
         Job job = updatedApp.getJob();
         String studentEmail = student != null ? studentService.getStudentUserEmail(student.getId()) : null;
@@ -156,11 +164,22 @@ public class ApplicationController {
                         studentName,
                         job.getTitle(),
                         job.getCompany(),
-                        status.name()
+                        status.name(),
+                        interviewDate
                     );
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+
+        // Trigger in-app notification
+        if (student != null && student.getUser() != null) {
+            try {
+                String msg = "Status updated to " + status.name() + " for " + job.getTitle() + " at " + job.getCompany();
+                sseNotificationService.sendNotification(student.getUser().getUsername(), msg);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         return updatedApp;

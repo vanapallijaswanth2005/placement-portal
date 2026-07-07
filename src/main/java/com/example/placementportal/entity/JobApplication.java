@@ -21,7 +21,12 @@ public class JobApplication {
     @Enumerated(EnumType.STRING)
     private ApplicationStatus status;
 
+    private java.time.LocalDateTime interviewDate;
+
     public JobApplication() {}
+
+    public java.time.LocalDateTime getInterviewDate() { return interviewDate; }
+    public void setInterviewDate(java.time.LocalDateTime interviewDate) { this.interviewDate = interviewDate; }
 
     public Long getId() {
         return id;

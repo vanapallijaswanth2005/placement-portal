@@ -1,5 +1,7 @@
 package com.example.placementportal.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.example.placementportal.dto.LoginRequest;
 import com.example.placementportal.dto.RegisterRequest;
 import com.example.placementportal.entity.Recruiter;
@@ -9,7 +11,12 @@ import com.example.placementportal.entity.User;
 import com.example.placementportal.repository.RecruiterRepository;
 import com.example.placementportal.repository.StudentRepository;
 import com.example.placementportal.repository.UserRepository;
+import com.example.placementportal.repository.VerificationTokenRepository;
+import com.example.placementportal.repository.RevokedTokenRepository;
+import com.example.placementportal.repository.MfaTokenRepository;
 import com.example.placementportal.entity.PasswordResetToken;
+import com.example.placementportal.entity.VerificationToken;
+import com.example.placementportal.entity.MfaToken;
 import com.example.placementportal.security.JwtUtil;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +27,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class AuthService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     @Autowired
     private UserRepository userRepository;
@@ -41,6 +50,15 @@ public class AuthService {
 
     @Autowired
     private com.example.placementportal.repository.PasswordResetTokenRepository passwordResetTokenRepository;
+
+    @Autowired
+    private VerificationTokenRepository verificationTokenRepository;
+
+    @Autowired
+    private RevokedTokenRepository revokedTokenRepository;
+
+    @Autowired
+    private MfaTokenRepository mfaTokenRepository;
 
     @org.springframework.transaction.annotation.Transactional
     public String register(RegisterRequest request) {
@@ -86,26 +104,80 @@ public class AuthService {
         // Send welcome email asynchronously
         emailService.sendWelcomeEmail(user.getEmail(), user.getUsername(), user.getRole().name());
 
-        return "User Registered Successfully";
+        // Generate verification token and send verification email
+        String token = java.util.UUID.randomUUID().toString();
+        VerificationToken verificationToken = new VerificationToken(token, user);
+        verificationTokenRepository.save(verificationToken);
+        emailService.sendVerificationEmail(user.getEmail(), user.getUsername(), token);
+
+        return "User Registered Successfully. Please check your email to verify your account.";
     }
 
     public String login(LoginRequest request) {
 
         User user = userRepository
                 .findFirstByUsername(request.getUsername())
-                .orElseThrow(() ->
-                        new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password"));
+                .orElseThrow(() -> {
+                    log.warn("Failed login attempt: user {} not found", request.getUsername());
+                    return new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password");
+                });
+
+        if (!user.isAccountNonLocked()) {
+            if (user.getLockTime() != null && user.getLockTime().plusMinutes(15).isBefore(java.time.LocalDateTime.now())) {
+                user.setAccountNonLocked(true);
+                user.setFailedAttemptCount(0);
+                user.setLockTime(null);
+                userRepository.save(user);
+                log.info("Account unlocked for user: {}", user.getUsername());
+            } else {
+                log.warn("Login attempt for locked account: {}", user.getUsername());
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Account is locked. Try again later.");
+            }
+        }
+
+        if (!user.isEmailVerified()) {
+            log.warn("Login attempt for unverified email: {}", user.getUsername());
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Please verify your email before logging in.");
+        }
 
         if (encoder.matches(
                 request.getPassword(),
                 user.getPassword())) {
 
+            if (user.getFailedAttemptCount() > 0) {
+                user.setFailedAttemptCount(0);
+                userRepository.save(user);
+            }
+
+            if (user.isMfaEnabled()) {
+                log.info("MFA required for user: {}", user.getUsername());
+                mfaTokenRepository.deleteByUser(user);
+                
+                String otp = String.format("%06d", new java.util.Random().nextInt(999999));
+                MfaToken mfaToken = new MfaToken(otp, user);
+                mfaTokenRepository.save(mfaToken);
+                emailService.sendMfaEmail(user.getEmail(), user.getUsername(), otp);
+                
+                return "MFA_REQUIRED";
+            }
+
+            log.info("Successful login for user: {}", user.getUsername());
             return jwtUtil.generateToken(
                     user.getUsername(),
                     user.getRole().name()
             );
         }
 
+        int newFailCount = user.getFailedAttemptCount() + 1;
+        user.setFailedAttemptCount(newFailCount);
+        if (newFailCount >= 5) {
+            user.setAccountNonLocked(false);
+            user.setLockTime(java.time.LocalDateTime.now());
+            log.warn("Account locked for user: {} due to too many failed attempts", user.getUsername());
+        }
+        userRepository.save(user);
+
+        log.warn("Failed login attempt: invalid password for user {}", user.getUsername());
         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password");
     }
 
@@ -144,5 +216,55 @@ public class AuthService {
 
         resetToken.setUsed(true);
         passwordResetTokenRepository.save(resetToken);
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void verifyEmail(String token) {
+        VerificationToken verificationToken = verificationTokenRepository.findByToken(token)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid verification token"));
+
+        if (verificationToken.getExpiryDate().isBefore(java.time.LocalDateTime.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Verification token has expired");
+        }
+
+        User user = verificationToken.getUser();
+        user.setEmailVerified(true);
+        userRepository.save(user);
+
+        verificationTokenRepository.deleteByUser(user);
+        log.info("Email verified for user: {}", user.getUsername());
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void logout(String token) {
+        if (token != null && !token.isBlank()) {
+            if (!revokedTokenRepository.existsByToken(token)) {
+                com.example.placementportal.entity.RevokedToken revokedToken = new com.example.placementportal.entity.RevokedToken(token);
+                revokedTokenRepository.save(revokedToken);
+                log.info("Token blacklisted successfully");
+            }
+        }
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public String verifyMfa(String username, String otp) {
+        User user = userRepository.findFirstByUsername(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username"));
+
+        MfaToken mfaToken = mfaTokenRepository.findByOtpAndUser(otp, user)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid OTP"));
+
+        if (mfaToken.getExpiryDate().isBefore(java.time.LocalDateTime.now())) {
+            mfaTokenRepository.delete(mfaToken);
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "OTP has expired");
+        }
+
+        mfaTokenRepository.deleteByUser(user);
+        
+        log.info("MFA verified successfully for user: {}", user.getUsername());
+        return jwtUtil.generateToken(
+                user.getUsername(),
+                user.getRole().name()
+        );
     }
 }

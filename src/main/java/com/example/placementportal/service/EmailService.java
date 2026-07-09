@@ -181,6 +181,46 @@ public class EmailService {
         }
     }
 
+    @org.springframework.scheduling.annotation.Async
+    public void sendVerificationEmail(String to, String username, String token) {
+        if (to == null || to.isEmpty()) {
+            log.warn("Cannot send verification email, address is empty for user: {}", username);
+            return;
+        }
+
+        try {
+            String verificationLink = "http://localhost:8080/auth/verify?token=" + token;
+            String htmlBody = "<h2>Welcome to CareerLink, " + username + "!</h2>"
+                    + "<p>Please verify your email address to activate your account.</p>"
+                    + "<p><a href='" + verificationLink + "'>Click here to verify</a></p>";
+
+            sendHtmlEmail(to, "Verify Your CareerLink Account", htmlBody);
+            log.info("Verification email sent to {}", to);
+        } catch (Exception e) {
+            log.error("Failed to send verification email to {}: {}", to, e.getMessage());
+        }
+    }
+
+    @org.springframework.scheduling.annotation.Async
+    public void sendMfaEmail(String to, String username, String otp) {
+        if (to == null || to.isEmpty()) {
+            log.warn("Cannot send MFA email, address is empty for user: {}", username);
+            return;
+        }
+
+        try {
+            String htmlBody = "<h2>CareerLink Login Verification</h2>"
+                    + "<p>Hi " + username + ",</p>"
+                    + "<p>Your One-Time Password (OTP) is: <strong>" + otp + "</strong></p>"
+                    + "<p>Please enter this code to complete your login. It will expire in 5 minutes.</p>";
+
+            sendHtmlEmail(to, "Your Login OTP", htmlBody);
+            log.info("MFA email sent to {}", to);
+        } catch (Exception e) {
+            log.error("Failed to send MFA email to {}: {}", to, e.getMessage());
+        }
+    }
+
     private void sendHtmlEmail(String to, String subject, String htmlBody) throws MessagingException {
         MimeMessage mimeMessage = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");

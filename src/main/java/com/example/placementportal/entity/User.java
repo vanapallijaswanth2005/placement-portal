@@ -1,6 +1,7 @@
 package com.example.placementportal.entity;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -16,6 +17,13 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     private Role role;   // 👈 IMPORTANT CHANGE
+
+    // Security fields
+    private int failedAttemptCount = 0;
+    private boolean accountNonLocked = true;
+    private LocalDateTime lockTime;
+    private boolean emailVerified = false;
+    private boolean mfaEnabled = false;
 
     public User() {}
 
@@ -58,4 +66,44 @@ public class User {
     public void setRole(Role role) {
         this.role = role;
     }
-}
+
+    public int getFailedAttemptCount() {
+        return failedAttemptCount;
+    }
+
+    public void setFailedAttemptCount(int failedAttemptCount) {
+        this.failedAttemptCount = failedAttemptCount;
+    }
+
+    public boolean isAccountNonLocked() {
+        return accountNonLocked;
+    }
+
+    public void setAccountNonLocked(boolean accountNonLocked) {
+        this.accountNonLocked = accountNonLocked;
+    }
+
+    public LocalDateTime getLockTime() {
+        return lockTime;
+    }
+
+    public void setLockTime(LocalDateTime lockTime) {
+        this.lockTime = lockTime;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
+    }
+
+    public boolean isMfaEnabled() {
+        return mfaEnabled;
+    }
+
+    public void setMfaEnabled(boolean mfaEnabled) {
+        this.mfaEnabled = mfaEnabled;
+    }
+}

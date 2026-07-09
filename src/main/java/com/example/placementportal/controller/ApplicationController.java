@@ -125,7 +125,18 @@ public class ApplicationController {
         return service.getByJobIdForRecruiter(jobId, recruiter.getId());
     }
 
-    // 🔍 RECRUITER: Get all applications for my jobs
+    // 📊 RECRUITER or ADMIN: View all applications
+    @PreAuthorize("hasAnyRole('RECRUITER', 'ADMIN')")
+    @GetMapping("/all")
+    public org.springframework.data.domain.Page<JobApplication> getAllApplications(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(
+                page, size, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "id"));
+        return service.getAll(pageable);
+    }
+
+    // 📋 RECRUITER: View applications for their posted jobs
     @PreAuthorize("hasRole('RECRUITER')")
     @GetMapping("/recruiter/my")
     public org.springframework.data.domain.Page<JobApplication> getMyRecruiterApplications(
@@ -136,7 +147,9 @@ public class ApplicationController {
         if (recruiter == null) {
             return org.springframework.data.domain.Page.empty();
         }
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+        
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(
+                page, size, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "id"));
         return service.getByRecruiterId(recruiter.getId(), pageable);
     }
 
@@ -185,15 +198,6 @@ public class ApplicationController {
         return updatedApp;
     }
 
-    // 📊 RECRUITER or ADMIN: View all applications
-    @PreAuthorize("hasAnyRole('RECRUITER', 'ADMIN')")
-    @GetMapping("/all")
-    public org.springframework.data.domain.Page<JobApplication> getAllApplications(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
-        return service.getAll(pageable);
-    }
 
     // 📊 RECRUITER or ADMIN: Export applicants for a specific job to CSV
     @PreAuthorize("hasAnyRole('RECRUITER', 'ADMIN')")

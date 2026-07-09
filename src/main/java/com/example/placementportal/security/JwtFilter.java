@@ -12,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import com.example.placementportal.repository.RevokedTokenRepository;
 
 import java.io.IOException;
 
@@ -23,6 +24,9 @@ public class JwtFilter extends OncePerRequestFilter {
 
     @Autowired
     private JwtUtil jwtUtil;
+
+    @Autowired
+    private RevokedTokenRepository revokedTokenRepository;
 
     @Override
     protected void doFilterInternal(
@@ -41,6 +45,12 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         if (token != null) {
+            if (revokedTokenRepository.existsByToken(token)) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("Token has been revoked. Please log in again.");
+                return;
+            }
+
             if (jwtUtil.validateToken(token)) {
                 String username = jwtUtil.extractUsername(token);
 

@@ -1,5 +1,7 @@
 package com.example.placementportal.exception;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -14,6 +16,8 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidationException(
@@ -53,15 +57,17 @@ public class GlobalExceptionHandler {
         if (ex.getMessage() != null && ex.getMessage().contains("own jobs")) {
             return new ResponseEntity<>(ex.getMessage(), HttpStatus.FORBIDDEN);
         }
-        return new ResponseEntity<>(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        log.error("Unhandled RuntimeException: ", ex);
+        return new ResponseEntity<>("An unexpected error occurred. Please try again later.", HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleGeneralException(
             Exception ex) {
 
+        log.error("Unhandled Exception: ", ex);
         return new ResponseEntity<>(
-                ex.getMessage(),
+                "An unexpected server error occurred.",
                 HttpStatus.INTERNAL_SERVER_ERROR
         );
     }

@@ -82,6 +82,7 @@ public class AuthService {
 
         user.setEmail(request.getEmail());
         user.setRole(request.getRole());
+        user.setEmailVerified(true); // Auto-verify for dev environment
 
         User savedUser = userRepository.save(user);
 

@@ -38,12 +38,12 @@
                 <div class="form-group">
                     <label for="login-username">Username</label>
                     <input type="text" id="login-username" placeholder="Enter username" required
-                        autocomplete="username">
+                        autocomplete="off">
                 </div>
                 <div class="form-group">
                     <label for="login-password">Password</label>
                     <input type="password" id="login-password" placeholder="Enter password" required
-                        autocomplete="current-password">
+                        autocomplete="new-password">
                 </div>
                 <button type="submit" class="btn btn-primary" id="login-btn">
                     <span>Login</span>
@@ -211,6 +211,17 @@
                             </div>
                             <button type="submit" class="btn btn-primary">Save Profile</button>
                         </form>
+                    </div>
+
+                    <!-- AI Recommended Jobs -->
+                    <div class="glass-panel jobs-explorer full-width" style="border: 1px solid var(--primary);">
+                        <div class="section-header">
+                            <h3 style="color: var(--primary);">✨ AI Recommended Jobs</h3>
+                            <p class="card-desc">Top matches based on your skills and branch.</p>
+                        </div>
+                        <div id="ai-recommended-jobs-list" class="jobs-grid" style="margin-top: 1rem;">
+                            <p class="card-desc">Complete your profile with skills or upload a resume to see recommendations.</p>
+                        </div>
                     </div>
 
                     <!-- Available Jobs -->

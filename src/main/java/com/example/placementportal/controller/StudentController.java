@@ -12,6 +12,10 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 
+import com.example.placementportal.entity.Job;
+import com.example.placementportal.service.JobService;
+import com.example.placementportal.service.ResumeParsingService;
+import com.example.placementportal.service.JobRecommendationService;
 @RestController
 @RequestMapping("/students")
 public class StudentController {
@@ -21,6 +25,15 @@ public class StudentController {
 
     @Autowired
     private StorageService storageService;
+
+    @Autowired
+    private ResumeParsingService resumeParsingService;
+
+    @Autowired
+    private JobRecommendationService jobRecommendationService;
+
+    @Autowired
+    private JobService jobService;
 
     // 🔒 Only RECRUITER or ADMIN can see list of all students
     @PreAuthorize("hasAnyRole('RECRUITER', 'ADMIN')")
@@ -61,10 +74,40 @@ public class StudentController {
                 throw new RuntimeException("Please create your profile first before uploading a resume");
             }
             student.setResumeUrl(resumeUrl);
+
+            // AI Integration: Extract skills from the uploaded PDF
+            String extractedText = resumeParsingService.extractTextFromPdf(file);
+            String extractedSkills = resumeParsingService.extractSkills(extractedText);
+            
+            // Append extracted skills if they exist and are not already present
+            if (!extractedSkills.isEmpty()) {
+                String currentSkills = student.getSkills() != null ? student.getSkills() : "";
+                if (currentSkills.isBlank()) {
+                    student.setSkills(extractedSkills);
+                } else {
+                    // Simple append (in a real app, you'd deduplicate)
+                    student.setSkills(currentSkills + ", " + extractedSkills);
+                }
+            }
+
             return studentService.saveStudent(student);
         } catch (Exception e) {
             throw new RuntimeException("Failed to upload resume: " + e.getMessage());
         }
+    }
+
+    // 🎓 STUDENT: Get AI Recommended Jobs
+    @PreAuthorize("hasRole('STUDENT')")
+    @GetMapping("/me/recommended-jobs")
+    public List<Job> getRecommendedJobs(@RequestParam(defaultValue = "10") int limit) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Student student = studentService.getStudentByUsername(username);
+        if (student == null) {
+            throw new RuntimeException("Student profile not found");
+        }
+        
+        List<Job> allJobs = jobService.getAllJobs();
+        return jobRecommendationService.recommendJobs(student, allJobs, limit);
     }
 
     @PreAuthorize("hasRole('ADMIN')")

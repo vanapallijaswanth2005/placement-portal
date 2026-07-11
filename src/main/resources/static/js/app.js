@@ -69,6 +69,7 @@ const el = {
     searchMaxSalary: document.getElementById('search-max-salary'),
     searchResetBtn: document.getElementById('search-reset-btn'),
     studentJobsList: document.getElementById('student-jobs-list'),
+    aiRecommendedJobsList: document.getElementById('ai-recommended-jobs-list'),
     studentAppsList: document.getElementById('student-applications-list'),
     
     // Recruiter Elements
@@ -628,6 +629,12 @@ async function loadStudentDashboard() {
 
         renderStudentJobs();
         renderStudentApplications();
+        
+        if (state.studentProfile) {
+            fetchAndRenderRecommendedJobs();
+        } else if (el.aiRecommendedJobsList) {
+            el.aiRecommendedJobsList.innerHTML = '<p class="card-desc">Complete your profile with skills or upload a resume to see recommendations.</p>';
+        }
     } catch (err) {
         showToast('Error loading student dashboard', 'error');
     }
@@ -726,6 +733,63 @@ async function handleSaveProfile(e) {
         loadStudentDashboard();
     } catch (err) {
         showToast(err.message || 'Failed to save profile', 'error');
+    }
+}
+
+async function fetchAndRenderRecommendedJobs() {
+    if (!el.aiRecommendedJobsList) return;
+    
+    el.aiRecommendedJobsList.innerHTML = '<p class="card-desc">Analyzing your profile...</p>';
+    
+    try {
+        const recommendedJobs = await apiFetch('/students/me/recommended-jobs?limit=3');
+        el.aiRecommendedJobsList.innerHTML = '';
+        
+        if (recommendedJobs.length === 0) {
+            el.aiRecommendedJobsList.innerHTML = '<p class="card-desc">No tailored matches found yet. Try adding more skills!</p>';
+            return;
+        }
+        
+        recommendedJobs.forEach(job => {
+            const applied = state.applications.find(app => getApplicationJobId(app) === job.id);
+            
+            const card = document.createElement('div');
+            card.className = 'job-card';
+            card.style.borderLeft = '4px solid var(--primary)';
+            
+            let actionBtnHtml = '';
+            if (applied) {
+                actionBtnHtml = `<button class="btn btn-secondary btn-block" disabled>Applied (${applied.status})</button>`;
+            } else {
+                actionBtnHtml = `<button class="btn btn-primary btn-block apply-job-btn" data-job-id="${job.id}">Quick Apply</button>`;
+            }
+
+            card.innerHTML = `
+                <div class="job-card-header">
+                    <h4>${job.title}</h4>
+                    <span class="badge" style="background: var(--primary); color: white;">Top Match</span>
+                </div>
+                <div class="job-card-body">
+                    <p><strong>🏢 Company:</strong> ${job.company}</p>
+                    <p><strong>📍 Location:</strong> ${job.location || 'N/A'}</p>
+                    <p><strong>💼 Salary:</strong> $${job.salary}</p>
+                    <p><strong>🛠 Skills:</strong> ${job.skills || 'N/A'}</p>
+                    <p class="job-desc-trunc">${job.description || ''}</p>
+                </div>
+                <div class="job-card-footer">
+                    ${actionBtnHtml}
+                </div>
+            `;
+            el.aiRecommendedJobsList.appendChild(card);
+        });
+
+        // Add event listeners for apply buttons
+        el.aiRecommendedJobsList.querySelectorAll('.apply-job-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => applyForJob(e.target.dataset.jobId));
+        });
+
+    } catch (err) {
+        el.aiRecommendedJobsList.innerHTML = '<p class="card-desc">Could not load recommendations.</p>';
     }
 }
 

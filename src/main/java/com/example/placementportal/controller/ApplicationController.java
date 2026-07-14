@@ -29,6 +29,7 @@ public class ApplicationController {
     private final EmailService emailService;
     private final com.example.placementportal.service.SseNotificationService sseNotificationService;
     private final com.example.placementportal.service.CsvExportService csvExportService;
+    private final com.example.placementportal.service.JobRecommendationService jobRecommendationService;
 
     @Autowired
     private JobService jobService;
@@ -38,13 +39,15 @@ public class ApplicationController {
                                  RecruiterService recruiterService,
                                  EmailService emailService,
                                  com.example.placementportal.service.SseNotificationService sseNotificationService,
-                                 com.example.placementportal.service.CsvExportService csvExportService) {
+                                 com.example.placementportal.service.CsvExportService csvExportService,
+                                 com.example.placementportal.service.JobRecommendationService jobRecommendationService) {
         this.service = service;
         this.studentService = studentService;
         this.recruiterService = recruiterService;
         this.emailService = emailService;
         this.sseNotificationService = sseNotificationService;
         this.csvExportService = csvExportService;
+        this.jobRecommendationService = jobRecommendationService;
     }
 
     // 🎓 STUDENT: Apply for job
@@ -58,7 +61,19 @@ public class ApplicationController {
             throw new RuntimeException("Please create your student profile first before applying!");
         }
 
+        if (student.getResumeUrl() == null || student.getResumeUrl().isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Please upload your resume before applying for jobs!");
+        }
+
         Job job = jobService.getJobById(jobId);
+
+        if (job.getLastDate() != null && job.getLastDate().isBefore(java.time.LocalDate.now())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "The deadline for this job has passed!");
+        }
 
         if (service.hasAlreadyApplied(student.getId(), jobId)) {
             throw new ResponseStatusException(
@@ -70,6 +85,11 @@ public class ApplicationController {
         application.setStudent(student);
         application.setJob(job);
         application.setStatus(ApplicationStatus.APPLIED);
+        
+        // AI Feature: Calculate match score
+        double matchScore = jobRecommendationService.calculateScore(student, job);
+        // Round to 2 decimal places for neatness
+        application.setMatchScore(Math.round(matchScore * 100.0) / 100.0);
 
         JobApplication saved = service.save(application);
 

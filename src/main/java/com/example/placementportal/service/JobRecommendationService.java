@@ -35,37 +35,7 @@ public class JobRecommendationService {
         // Calculate score for each job
         Map<Job, Double> jobScores = new HashMap<>();
         for (Job job : allJobs) {
-            String jobText = (job.getTitle() != null ? job.getTitle() : "") + " " +
-                             (job.getSkills() != null ? job.getSkills() : "") + " " +
-                             (job.getDescription() != null ? job.getDescription() : "");
-                             
-            Set<String> jobTokens = tokenize(jobText);
-            double score = calculateJaccardSimilarity(studentTokens, jobTokens);
-            
-            // Weighting: If job explicitly matches the student's branch in eligibility criteria
-            if (job.getEligibilityCriteria() != null && student.getBranch() != null &&
-                !student.getBranch().isBlank() &&
-                job.getEligibilityCriteria().toLowerCase().contains(student.getBranch().toLowerCase())) {
-                score += 0.2; // Boost score for branch match
-            }
-
-            // CGPA Boost: Extract CGPA from eligibility criteria if it exists (e.g. "7.5 CGPA")
-            if (job.getEligibilityCriteria() != null && job.getEligibilityCriteria().toLowerCase().contains("cgpa")) {
-                try {
-                    java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+(\\.\\d+)?)").matcher(job.getEligibilityCriteria());
-                    if (m.find()) {
-                        double requiredCgpa = Double.parseDouble(m.group(1));
-                        if (student.getCgpa() >= requiredCgpa) {
-                            score += 0.3; // Boost score for meeting CGPA criteria
-                        } else {
-                            score -= 0.2; // Penalize if CGPA is lower than required
-                        }
-                    }
-                } catch (Exception e) {
-                    // Ignore parse errors
-                }
-            }
-            
+            double score = calculateScore(student, job, studentTokens);
             jobScores.put(job, score);
         }
 
@@ -76,6 +46,48 @@ public class JobRecommendationService {
                 .map(Map.Entry::getKey)
                 .limit(limit)
                 .collect(Collectors.toList());
+    }
+
+    public double calculateScore(Student student, Job job) {
+        String studentText = (student.getSkills() != null ? student.getSkills() : "") + " " +
+                             (student.getBranch() != null ? student.getBranch() : "");
+        Set<String> studentTokens = tokenize(studentText);
+        if (studentTokens.isEmpty()) return 0.0;
+        return calculateScore(student, job, studentTokens);
+    }
+
+    private double calculateScore(Student student, Job job, Set<String> studentTokens) {
+        String jobText = (job.getTitle() != null ? job.getTitle() : "") + " " +
+                         (job.getSkills() != null ? job.getSkills() : "") + " " +
+                         (job.getDescription() != null ? job.getDescription() : "");
+                         
+        Set<String> jobTokens = tokenize(jobText);
+        double score = calculateJaccardSimilarity(studentTokens, jobTokens);
+        
+        // Weighting: If job explicitly matches the student's branch in eligibility criteria
+        if (job.getEligibilityCriteria() != null && student.getBranch() != null &&
+            !student.getBranch().isBlank() &&
+            job.getEligibilityCriteria().toLowerCase().contains(student.getBranch().toLowerCase())) {
+            score += 0.2; // Boost score for branch match
+        }
+
+        // CGPA Boost: Extract CGPA from eligibility criteria if it exists (e.g. "7.5 CGPA")
+        if (job.getEligibilityCriteria() != null && job.getEligibilityCriteria().toLowerCase().contains("cgpa")) {
+            try {
+                java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+(\\.\\d+)?)").matcher(job.getEligibilityCriteria());
+                if (m.find()) {
+                    double requiredCgpa = Double.parseDouble(m.group(1));
+                    if (student.getCgpa() >= requiredCgpa) {
+                        score += 0.3; // Boost score for meeting CGPA criteria
+                    } else {
+                        score -= 0.2; // Penalize if CGPA is lower than required
+                    }
+                }
+            } catch (Exception e) {
+                // Ignore parse errors
+            }
+        }
+        return Math.max(0.0, score); // Prevent negative scores
     }
 
     private Set<String> tokenize(String text) {

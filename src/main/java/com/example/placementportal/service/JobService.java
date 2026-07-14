@@ -44,6 +44,9 @@ public class JobService {
 
     @CacheEvict(value = "jobs", allEntries = true)
     public Job saveJob(Job job, Recruiter recruiter) {
+        if (job.getLastDate() != null && job.getLastDate().isBefore(java.time.LocalDate.now())) {
+            throw new RuntimeException("Job deadline cannot be set to a past date");
+        }
         job.setRecruiter(recruiter);
         return repo.save(job);
     }
@@ -56,6 +59,11 @@ public class JobService {
         // Ownership check
         if (existingJob.getRecruiter() == null || !existingJob.getRecruiter().getId().equals(recruiter.getId())) {
             throw new RuntimeException("You can only edit your own jobs");
+        }
+
+        // Validate that if they are changing the deadline, it's not set to the past
+        if (updatedJob.getLastDate() != null && updatedJob.getLastDate().isBefore(java.time.LocalDate.now())) {
+            throw new RuntimeException("Job deadline cannot be set to a past date");
         }
 
         existingJob.setTitle(updatedJob.getTitle());

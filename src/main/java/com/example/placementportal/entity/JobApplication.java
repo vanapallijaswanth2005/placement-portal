@@ -23,7 +23,29 @@ public class JobApplication {
 
     private java.time.LocalDateTime interviewDate;
 
+    @Column(name = "match_score")
+    private Double matchScore;
+
     public JobApplication() {}
+
+    public Double getMatchScore() { return matchScore; }
+    public void setMatchScore(Double matchScore) { this.matchScore = matchScore; }
+
+    @Transient
+    public String getGoogleCalendarUrl() {
+        if (interviewDate != null && job != null) {
+            try {
+                java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");
+                String start = interviewDate.format(formatter);
+                String end = interviewDate.plusHours(1).format(formatter);
+                String title = java.net.URLEncoder.encode("Interview with " + job.getCompany() + " for " + job.getTitle(), java.nio.charset.StandardCharsets.UTF_8);
+                return "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + title + "&dates=" + start + "Z/" + end + "Z";
+            } catch (Exception e) {
+                return null;
+            }
+        }
+        return null;
+    }
 
     public java.time.LocalDateTime getInterviewDate() { return interviewDate; }
     public void setInterviewDate(java.time.LocalDateTime interviewDate) { this.interviewDate = interviewDate; }

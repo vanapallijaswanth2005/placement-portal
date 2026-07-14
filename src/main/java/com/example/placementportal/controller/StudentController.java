@@ -96,6 +96,9 @@ public class StudentController {
         }
     }
 
+    @Autowired
+    private com.example.placementportal.service.PdfGenerationService pdfGenerationService;
+
     // 🎓 STUDENT: Get AI Recommended Jobs
     @PreAuthorize("hasRole('STUDENT')")
     @GetMapping("/me/recommended-jobs")
@@ -108,6 +111,30 @@ public class StudentController {
         
         List<Job> allJobs = jobService.getAllJobs();
         return jobRecommendationService.recommendJobs(student, allJobs, limit);
+    }
+
+    // 🎓 STUDENT: Download Portfolio PDF
+    @PreAuthorize("hasRole('STUDENT')")
+    @GetMapping("/me/portfolio/download")
+    public org.springframework.http.ResponseEntity<byte[]> downloadPortfolio() {
+        try {
+            String username = SecurityContextHolder.getContext().getAuthentication().getName();
+            Student student = studentService.getStudentByUsername(username);
+            if (student == null) {
+                return org.springframework.http.ResponseEntity.badRequest().build();
+            }
+            
+            byte[] pdfBytes = pdfGenerationService.generateStudentPortfolio(student);
+            
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.setContentType(org.springframework.http.MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("attachment", "portfolio_" + 
+                (student.getName() != null ? student.getName().replaceAll("\\s+", "_") : "student") + ".pdf");
+            
+            return new org.springframework.http.ResponseEntity<>(pdfBytes, headers, org.springframework.http.HttpStatus.OK);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to generate portfolio: " + e.getMessage());
+        }
     }
 
     @PreAuthorize("hasRole('ADMIN')")

@@ -35,8 +35,8 @@ public class StudentController {
     @Autowired
     private JobService jobService;
 
-    // 🔒 Only RECRUITER or ADMIN can see list of all students
-    @PreAuthorize("hasAnyRole('RECRUITER', 'ADMIN')")
+    // 🔒 Only ADMIN can see list of all students (Privacy protection)
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public org.springframework.data.domain.Page<Student> getAllStudents(
             @RequestParam(defaultValue = "0") int page,

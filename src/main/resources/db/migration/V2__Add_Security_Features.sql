@@ -1,0 +1,27 @@
+ALTER TABLE users ADD COLUMN failed_attempt_count INT NOT NULL DEFAULT 0;
+ALTER TABLE users ADD COLUMN account_non_locked BOOLEAN NOT NULL DEFAULT TRUE;
+ALTER TABLE users ADD COLUMN lock_time DATETIME;
+ALTER TABLE users ADD COLUMN email_verified BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN mfa_enabled BOOLEAN NOT NULL DEFAULT FALSE;
+
+CREATE TABLE verification_token (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    token VARCHAR(255),
+    user_id BIGINT NOT NULL,
+    expiry_date DATETIME,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE revoked_token (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    token VARCHAR(255) NOT NULL UNIQUE,
+    revoked_at DATETIME NOT NULL
+);
+
+CREATE TABLE mfa_tokens (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    otp VARCHAR(255) NOT NULL,
+    user_id BIGINT NOT NULL,
+    expiry_date DATETIME NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);

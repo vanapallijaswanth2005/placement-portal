@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Status Update</title>
+</head>
+
+<body
+    style="margin: 0; padding: 0; background-color: #0f0f1a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #0f0f1a;">
+        <tr>
+            <td align="center" style="padding: 40px 20px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="600"
+                    style="max-width: 600px; width: 100%;">
+
+                    <!-- Header with Logo -->
+                    <tr>
+                        <td align="center"
+                            style="padding: 30px 40px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 16px 16px 0 0;">
+                            <h1
+                                style="margin: 0; font-size: 32px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px;">
+                                Career<span style="font-weight: 400;">Link</span>
+                            </h1>
+                            <p
+                                style="margin: 8px 0 0; font-size: 14px; color: rgba(255,255,255,0.85); letter-spacing: 2px; text-transform: uppercase;">
+                                Application Update</p>
+                        </td>
+                    </tr>
+
+                    <!-- Main Body -->
+                    <tr>
+                        <td
+                            style="background-color: #1a1a2e; padding: 40px; border-left: 1px solid rgba(255,255,255,0.06); border-right: 1px solid rgba(255,255,255,0.06);">
+
+                            <!-- Greeting -->
+                            <h2 style="margin: 0 0 8px; font-size: 24px; color: #f3f3f6; font-weight: 600;">
+                                Hi <span th:text="${studentName}" style="color: #a78bfa;">Student</span>,
+                            </h2>
+                            <p style="margin: 0 0 28px; font-size: 15px; color: #a0a0ba; line-height: 1.6;">
+                                There's an update on your job application. Here are the details:
+                            </p>
+
+                            <!-- Job Details Card -->
+                            <table role="presentation" cellpadding="0" cellspacing="0" width="100%"
+                                style="margin-bottom: 24px;">
+                                <tr>
+                                    <td
+                                        style="background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2); border-radius: 12px; padding: 24px;">
+
+                                        <!-- Job Title -->
+                                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%"
+                                            style="margin-bottom: 16px;">
+                                            <tr>
+                                                <td style="width: 44px; vertical-align: top;">
+                                                    <div
+                                                        style="width: 40px; height: 40px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 10px; text-align: center; line-height: 40px; font-size: 20px;">
+                                                        💼</div>
+                                                </td>
+                                                <td style="padding-left: 14px; vertical-align: middle;">
+                                                    <p
+                                                        style="margin: 0; font-size: 12px; color: #6b6b80; text-transform: uppercase; letter-spacing: 1px;">
+                                                        Position</p>
+                                                    <p style="margin: 2px 0 0; font-size: 18px; font-weight: 700; color: #f3f3f6;"
+                                                        th:text="${jobTitle}">Software Engineer</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                        <!-- Company -->
+                                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                                            <tr>
+                                                <td style="width: 44px; vertical-align: top;">
+                                                    <div
+                                                        style="width: 40px; height: 40px; background: rgba(139,92,246,0.15); border-radius: 10px; text-align: center; line-height: 40px; font-size: 20px;">
+                                                        🏢</div>
+                                                </td>
+                                                <td style="padding-left: 14px; vertical-align: middle;">
+                                                    <p
+                                                        style="margin: 0; font-size: 12px; color: #6b6b80; text-transform: uppercase; letter-spacing: 1px;">
+                                                        Company</p>
+                                                    <p style="margin: 2px 0 0; font-size: 18px; font-weight: 700; color: #f3f3f6;"
+                                                        th:text="${company}">Acme Corp</p>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Status Badge -->
+                            <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td align="center" style="padding: 24px; border-radius: 12px;"
+                                        th:style="'padding: 24px; border-radius: 12px; background: ' + ${statusBgColor} + '; border: 1px solid ' + ${statusBorderColor} + ';'">
+                                        <p
+                                            style="margin: 0 0 6px; font-size: 12px; color: #a0a0ba; text-transform: uppercase; letter-spacing: 1.5px;">
+                                            Current Status</p>
+                                        <p style="margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px;"
+                                            th:style="'margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; color: ' + ${statusColor} + ';'"
+                                            th:text="${status}">SELECTED</p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Status Description -->
+                            <p style="margin: 24px 0 0; font-size: 14px; color: #a0a0ba; line-height: 1.6; text-align: center;"
+                                th:text="${statusMessage}">
+                                Your application has been updated.
+                            </p>
+
+                            <!-- CTA Button -->
+                            <table role="presentation" cellpadding="0" cellspacing="0" width="100%"
+                                style="margin-top: 32px;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="http://localhost:8080"
+                                            style="display: inline-block; padding: 14px 40px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: #ffffff; text-decoration: none; border-radius: 12px; font-size: 15px; font-weight: 600; letter-spacing: 0.5px;">
+                                            View Application →
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background-color: #12121f; padding: 24px 40px; border-radius: 0 0 16px 16px; border: 1px solid rgba(255,255,255,0.06); border-top: none;">
+                            <p
+                                style="margin: 0; font-size: 13px; color: #6b6b80; text-align: center; line-height: 1.6;">
+                                This is an automated email from <strong style="color: #a0a0ba;">CareerLink</strong>.<br>
+                                You received this because your application status was updated.<br>
+                                © 2026 CareerLink — Modern Career Hub. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>
